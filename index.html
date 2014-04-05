@@ -4,8 +4,54 @@
     <title>BlackHole.js</title>
 </head>
 <body>
-    <section>Tryam!</section>
+    <textarea name="" id="testText" cols="100" rows="50"></textarea><br/>
+    <button id="buttonTest">Test</button>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="js/blackhole.js"></script>
+    <script>
+        function test() {
+            var data = (function () {
+                var res = [];
+
+                var doc = new DOMParser();
+                doc = doc.parseFromString(d3.select("#testText").property("value"), 'text/xml');
+
+                doc = d3.select(doc);
+
+                doc.selectAll('event').each(function (d) {
+                    d = d3.select(this);
+                    res.push({
+                        id : res.length,
+                        date: +d.attr('date'),
+                        author: d.attr('author'),
+                        filename: d.attr('filename'),
+                        action: d.attr('action')
+                    });
+                });
+
+                return res;
+            })();
+
+            var bh = d3.blackHole();
+            bh.parser.getGroupBy(function(d) { return d.date; });
+            bh.parser.getParent(function(d) {return d.author;});
+            bh.parser.getParentKey(function(d) {return d;});
+            bh.parser.getChildKey(function(d) {return d.id;});
+            bh.parser.getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); });
+            bh.setting.drawParentImg = false;
+
+            bh.render.onGetParentLabel(function(d) {return d.nodeValue;});
+            bh.render.onGetChildLabel(function(d) {return d.nodeValue.filename;});
+
+            bh.processor.onCheckSkipping(function(){ return true; });
+            var stepDate = 24 * 60 * 60 * 1000;
+            bh.processor.onCalcRightBound(function(l) {
+                return l + stepDate;
+            });
+
+            bh.runShow(data, 0, 0);
+        }
+        d3.select("#buttonTest").on('click', test);
+    </script>
 </body>
 </html>

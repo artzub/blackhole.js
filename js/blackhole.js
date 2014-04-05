@@ -161,15 +161,15 @@
                 return d.date;
             });
 
-            parser.setting.getValue(function(d) {
+            parser.setting.getValue(function(/*d*/) {
                 return 1;
             });
 
-            parser.setting.getParentRadius(function(d) {
+            parser.setting.getParentRadius(function(/*d*/) {
                 return 25;
             });
 
-            parser.setting.getChildRadius(function(d) {
+            parser.setting.getChildRadius(function(/*d*/) {
                 return 2;
             });
         })();
@@ -339,7 +339,7 @@
                     n = getChild(d);
 
                     d.nodes.push(n);
-                    n.category.currents[groupBy] = (n.cat.currents[groupBy] || 0);
+                    n.category.currents[groupBy] = (n.category.currents[groupBy] || 0);
                     n.category.currents[groupBy]++;
                     n.category.values['_' + n.id] = parser.setting.getValue()(d);
                     !n.inserted && (n.inserted = ns.push(n));
@@ -371,21 +371,26 @@
         var processor = {
             killWorker : killWorker
             , boundRange : [0, 1]
+            , onFinished : null
+            , onStarted : null
+            , onProcessing : null
+            , onProcessed : null
+            , onRecalc : null
+            , onFilter : null
             , setting : {
-                onFilter: null,
-                onCalcRightBound: null,
-                onFinished: null,
-                onStarted: null,
-                onProcessing: null,
-                onProcessed: null,
-                onCheckSkipping: null,
-                onRecalc: null
+                onCalcRightBound : null,
+                onCheckSkipping : null
             }
         };
 
         // Initialize events functions
         d3.map(processor.setting).keys().forEach(function(key) {
             processor.setting[key] = func(processor.setting, key);
+        });
+
+        d3.map(processor).keys().forEach(function(key) {
+            if (/^on/.test(key))
+                processor[key] = func(processor, key);
         });
 
         function killWorker() {
@@ -396,7 +401,7 @@
         }
 
         function doFunc(key) {
-            return getFun(processor.setting, key);
+            return getFun(processor, key);
         }
 
         function doFilter(dl, dr) {
@@ -404,7 +409,7 @@
         }
 
         function doCalcRightBound (dl) {
-            return doFunc("onCalcRightBound")(dl);
+            return getFun(processor.setting, "onCalcRightBound")(dl);
         }
 
         function doFinished(dl) {
@@ -428,7 +433,7 @@
         }
 
         function doCheckSkipping() {
-            return doFunc("onCheckSkipping")();
+            return getFun(processor.setting, "onCheckSkipping")();
         }
 
         function loop() {
@@ -523,13 +528,13 @@
 
         var render = {
             size : [500, 500]
+            , onGetChildNodes: null
+            , onGetParentNodes: null
+            , onGetLinks: null
+            , onGetLastEvent: null
+            , onGetSelectedColor: null
+            , onGetNodeRadius: null
             , setting : {
-                onGetLastEvent: null,
-                onGetChildNodes: null,
-                onGetParentNodes: null,
-                onGetLinks: null,
-                onGetSelectedColor: null,
-                onGetNodeRadius: null,
                 onGetParentLabel: null,
                 onGetChildLabel: null,
 
@@ -557,6 +562,43 @@
                 render.setting[key] = func(render.setting, key);
         });
 
+        d3.map(render).keys().forEach(function(key) {
+            if (regEvent.test(key))
+                render[key] = func(render, key);
+        });
+
+        function getLastEvent() {
+            return getFun(render, "onGetLastEvent")();
+        }
+
+        function getChildNodes() {
+            return getFun(render, "onGetChildNodes")();
+        }
+
+        function getParentNodes() {
+            return getFun(render, "onGetParentNodes")();
+        }
+
+        function getLinks() {
+            return getFun(render, "onGetLinks")();
+        }
+
+        function getParentLabel(d) {
+            return getFun(render.setting, "onGetParentLabel")(d);
+        }
+
+        function getChildLabel(d) {
+            return getFun(render.setting, "onGetChildLabel")(d);
+        }
+
+        function getSelectedColor(d) {
+            return getFun(render, "onGetSelectedColor")(d);
+        }
+
+        function getNodeRadius(d) {
+            return getFun(render, "onGetNodeRadius")(d);
+        }
+
         var defImg
             , particleImg
             , tempCanvas
@@ -572,6 +614,14 @@
 
         function compereColor(a, b) {
             return a.r != b.r || a.g != b.g || a.b != b.b;
+        }
+
+        function sortByColor(a, b) {
+            return d3.ascending(b.color + !b.flash, a.color + !a.flash);
+        }
+
+        function sortByOpacity(a, b) {
+            return d3.ascending(b.opacity, a.opacity);
         }
 
         function drawTail(c, d, x, y, vanishing) {
@@ -624,38 +674,6 @@
             }
         }
 
-        function getLastEvent() {
-            return getFun(render.setting, "onGetLastEvent")();
-        }
-
-        function getChildNodes() {
-            return getFun(render.setting, "onGetChildNodes")();
-        }
-
-        function getParentNodes() {
-            return getFun(render.setting, "onGetParentNodes")();
-        }
-
-        function getLinks() {
-            return getFun(render.setting, "onGetLinks")();
-        }
-
-        function getParentLabel(d) {
-            return getFun(render.setting, "onGetParentLabel")(d);
-        }
-
-        function getChildLabel(d) {
-            return getFun(render.setting, "onGetChildLabel")(d);
-        }
-
-        function getSelectedColor(d) {
-            return getFun(render.setting, "onGetSelectedColor")(d);
-        }
-
-        function getNodeRadius(d) {
-            return getFun(render.setting, "onGetNodeRadius")(d);
-        }
-
         /**
          * draw scene
          * @returns {HTMLCanvasElement}
@@ -691,7 +709,7 @@
                 ;
 
             if (!lastEvent || !lastEvent.hasOwnProperty("translate"))
-                return null;
+                return bufCanvas;
 
             bufCtx.save();
             bufCtx.clearRect(0, 0, render.size[0], render.size[1]);
@@ -702,8 +720,10 @@
             bufCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
             bufCtx.scale(lastEvent.scale, lastEvent.scale);
 
-            if (render.drawChild) {
+            if (render.setting.drawChild) {
                 n = getChildNodes();
+
+                n = n.sort(sortByOpacity).sort(sortByColor);
 
                 currentCache = render.setting.drawAsPlasma ? neonBallCache : particleImageCache;
 
@@ -755,7 +775,7 @@
                     if (!c || compereColor(c, selectedColor)) {
                         c = selectedColor;
 
-                        if (!render.drawHalo) {
+                        if (!render.setting.drawHalo) {
                             if (beg) {
                                 bufCtx.stroke();
                                 bufCtx.fill();
@@ -770,8 +790,8 @@
                             img = currentCache.get(bufCtx.fillStyle);
                             if (!img) {
                                 img = render.setting.drawAsPlasma
-                                    ? generateNeonBall(64, 64, c.r, c.g, c.b, 1)
-                                    : colorize(particleImg, c.r, c.g, c.b, 1)
+                                    ? generateNeonBall(64, 64, +c.r, +c.g, +c.b, 1)
+                                    : colorize(particleImg, +c.r, +c.g, +c.b, 1)
                                 ;
                                 currentCache.set(bufCtx.fillStyle, img);
                             }
@@ -810,6 +830,7 @@
                 bufCtx.globalCompositeOperation = 'source-over';
 
                 n = getParentNodes();
+                n = n.sort(sortByOpacity).sort(sortByColor);
                 l = n.length;
 
                 i = 100;
@@ -929,11 +950,11 @@
          */
         function colorize(img, r, g, b, a) {
 
-            if (!img || !img.width)
-                return img;
-
             if (!tempCanvas)
                 tempCanvas = document.createElement("canvas");
+
+            if (!img || !img.width)
+                return tempCanvas;
 
             if (tempCanvas.width != img.width)
                 tempCanvas.width = img.width;
@@ -997,6 +1018,7 @@
             , lastEvent
             , nodes
             , links
+            , incData
             , idLayer = layersCounter++
             , layer = d3.select(parentNode)
             , valid
@@ -1061,10 +1083,61 @@
             return bh;
         };
 
+        function normalizeRadius(d) {
+            return d.size > 0 ? d.size : 0;
+        }
+
+        function checkVisible(d, offsetx, offsety) {
+            var tx = lastEvent.translate[0]/lastEvent.scale,
+                ty = lastEvent.translate[1]/lastEvent.scale
+                ;
+
+            offsetx = offsetx || 0;
+            if (!(offsetx instanceof Array))
+                offsetx = [offsetx, offsetx];
+            offsety = offsety || 0;
+            if (!(offsety instanceof Array))
+                offsety = [offsety, offsety];
+
+            return (
+                d.x + d.size > -tx + offsetx[0]
+                && d.x - d.size < -tx + offsetx[1] + bh.size()[0]/lastEvent.scale
+                && d.y + d.size > -ty + offsety[0]
+                && d.y - d.size < -ty + offsety[1] + bh.size()[1]/lastEvent.scale
+                );
+        }
+
+        function filterVisible(d) {
+            return checkVisible(d) && (d.visible || d.alive);
+        }
+
+        render.onGetChildNodes(function() { return forceChild ? forceChild.nodes().filter(filterVisible) : []; });
+        render.onGetParentNodes(function() { return forceParent ? forceParent.nodes().filter(filterVisible) : []; });
+        render.onGetLinks(function() { return links ? links.values() : []; });
+        render.onGetLastEvent(function() {
+            return lastEvent;
+        });
+        render.onGetSelectedColor(function(d) {
+            return d.flash ? d.flashColor : d.d3color
+        });
+        render.onGetNodeRadius(function(d) {
+            return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
+        });
+
         bh.getVisibleByStep = func(bh, 'getVisibleByStep');
         bh.getVisibleByStep(function() { return true; });
         bh.getCreateNearParent = func(bh, 'getCreateNearParent');
         bh.getCreateNearParent(function() { return false; });
+
+        //TODO: processor.onProcessing();
+        //TODO: processor.onProcessed();
+
+        processor.onFilter(function(l, r) {
+            return incData.filter(function (d) {
+                var value = parser.setting.getGroupBy()(d);
+                return value >= l && value < r;
+            });
+        });
 
         processor.onRecalc(function reCalc(d) {
             if (!processor.IsRun())
@@ -1138,7 +1211,7 @@
                 var key = parser.setting.getParentKey()(p.nodeValue) + "_" + fn
                     ;
 
-                if (!links.has(key))
+                if (links && !links.has(key))
                     links.set(key, {
                         key : key,
                         source : p,
@@ -1217,9 +1290,9 @@
                 x = d.x - node.x;
                 y = d.y - node.y;
                 l = Math.sqrt(x * x + y * y);
-                r = render.setting.onGetNodeRadius()(d) / 2 +
-                    (render.setting.onGetNodeRadius()(node) +
-                    bh.render.setting.padding);
+                r = render.onGetNodeRadius()(d) / 2 +
+                    (render.onGetNodeRadius()(node) +
+                    bh.setting.padding);
                 if (l != r) {
                     l = (l - r) / (l || 1) * (alpha || 1);
                     x *= l;
@@ -1320,7 +1393,9 @@
 
             d3.select(canvas).style("background", "#000");
 
-            ctx.drawImage(render.draw(), 0, 0);
+            var cnvs = render.draw();
+
+            ctx.drawImage(cnvs, 0, 0);
             ctx.restore();
 
             valid = false;
@@ -1337,26 +1412,31 @@
 
         /**
          * Running dynamic visualization
-         * @param {Array} adata
-         * @param {Number} w
-         * @param {Number} h
+         * @param {Array} inData
+         * @param {Number} width
+         * @param {Number} height
          */
-        bh.runShow = function(adata, w, h) {
+        bh.runShow = function(inData, width, height) {
             processor.killWorker();
 
-            if ((adata || []).length)
+            if (!(inData || []).length)
                 return;
 
-            w = w || parentNode.clientWidth;
-            h = h || parentNode.clientHeight;
+            var w = width || parentNode.clientWidth;
+            var h = height || parentNode.clientHeight;
 
             bh.size([w, h]);
 
             doStating();
 
-            nodes = parser.nodes(adata);
+            incData = inData.sort(function(b, a) {
+                var fn = parser.setting.getGroupBy();
+                return d3.ascending(fn(a), fn(b));
+            });
 
-            processor.boundRange = d3.extent(adata.map(parser.setting.getGroupBy()));
+            nodes = parser.nodes(incData);
+
+            processor.boundRange = d3.extent(incData.map(parser.setting.getGroupBy()));
 
             layer.selectAll("*").remove();
 
@@ -1457,7 +1537,7 @@
         }
 
         if (!window.requestAnimationFrame)
-            window.requestAnimationFrame = function(callback, element) {
+            window.requestAnimationFrame = function(callback/*, element*/) {
                 var currTime = new Date().getTime();
                 var timeToCall = Math.max(0, 16 - (currTime - lastTime));
                 var id = window.setTimeout(function() { callback(currTime + timeToCall); },
