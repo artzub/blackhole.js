@@ -2,14 +2,46 @@
 <html>
 <head>
     <title>BlackHole.js</title>
+    <style>
+        .console {
+            top: 0;
+            right: 0;
+            position: absolute;
+            z-index: 10;
+            list-style: none;
+        }
+
+        .console > li > ul {
+            display: block;
+        }
+
+        .console > li:hover > ul {
+            display: block;
+        }
+
+        #canvas-svg {
+            width: 500px;
+            height: 500px;
+        }
+    </style>
 </head>
 <body>
-    <textarea name="" id="testText" cols="100" rows="50"></textarea><br/>
+    <ul class="console">
+        <li>Setting
+            <ul id="bh-setting"></ul>
+        </li>
+    </ul>
+    <div id="canvas-svg"></div>
+    <br/>
+    <br/>
     <button id="buttonTest">Test</button>
+    <br/>
+    <textarea name="" id="testText" cols="100" rows="50"></textarea>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="js/blackhole.js"></script>
     <script>
         function test() {
+
             var data = (function () {
                 var res = [];
 
@@ -32,25 +64,60 @@
                 return res;
             })();
 
-            var bh = d3.blackHole();
-            bh.parser.getGroupBy(function(d) { return d.date; });
-            bh.parser.getParent(function(d) {return d.author;});
-            bh.parser.getParentKey(function(d) {return d;});
-            bh.parser.getChildKey(function(d) {return d.id;});
-            bh.parser.getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); });
-            bh.setting.drawParentImg = false;
-
-            bh.render.onGetParentLabel(function(d) {return d.nodeValue;});
-            bh.render.onGetChildLabel(function(d) {return d.nodeValue.filename;});
-
-            bh.processor.onCheckSkipping(function(){ return true; });
-            var stepDate = 24 * 60 * 60 * 1000;
-            bh.processor.onCalcRightBound(function(l) {
-                return l + stepDate;
-            });
-
+            bh.stop();
             bh.runShow(data, 0, 0);
         }
+
+        var bh = d3.blackHole("#canvas-svg");
+
+        bh.parser.getGroupBy(function(d) { return d.date; })
+                .getParent(function(d) {return d.author;})
+                .getParentKey(function(d) {return d;})
+                .getChildKey(function(d) {return d.filename;})
+                .getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); });
+
+        bh.render.onGetParentLabel(function(d) {return d.nodeValue;})
+                .onGetChildLabel(function(d) {return d.nodeValue.filename;});
+
+        bh.processor.onCheckSkipping(function(){ return true; });
+        bh.getVisibleByStep(function(d, n) {
+            return !(d.action == "D");
+        });
+        bh.getCreateNearParent(function(d, n) {return d.action == "A";});
+
+        var stepDate = 24 * 60 * 60 * 1000;
+        bh.processor.onCalcRightBound(function(l) {
+            return l + stepDate;
+        });
+
+        function chch(d) {
+            bh.setting[d] = this.checked;
+        }
+
+        d3.select("#bh-setting")
+                .selectAll("li")
+                .data(d3.map(bh.setting).keys().filter(function(d) {
+                    var val = bh.setting[d];
+                    return typeof val === "boolean";
+                }))
+                .enter()
+                .append('li')
+                .each(function(d) {
+                    var item = d3.select(this);
+                    item.append('input')
+                            .datum(d)
+                            .attr("id", "bh-s-" + d)
+                            .attr("type", "checkbox")
+                            .attr("checked", bh.setting[d] ? "checked" : null)
+                            .on('change', chch)
+                    ;
+                    item.append('label')
+                            .text(d)
+                            .attr("for", "bh-s-" + d)
+                    ;
+                })
+        ;
+
         d3.select("#buttonTest").on('click', test);
     </script>
 </body>

@@ -755,7 +755,6 @@
                 }
 
                 l = n.length;
-
                 c = null;
                 i = 100;
                 beg = false;
@@ -787,13 +786,13 @@
                         }
                         else {
                             bufCtx.strokeStyle = c.toString();
-                            img = currentCache.get(bufCtx.fillStyle);
+                            img = currentCache.get(bufCtx.strokeStyle);
                             if (!img) {
                                 img = render.setting.drawAsPlasma
-                                    ? generateNeonBall(64, 64, +c.r, +c.g, +c.b, 1)
-                                    : colorize(particleImg, +c.r, +c.g, +c.b, 1)
+                                    ? generateNeonBall(64, 64, c.r, c.g, c.b, 1)
+                                    : colorize(particleImg, c.r, c.g, c.b, 1)
                                 ;
-                                currentCache.set(bufCtx.fillStyle, img);
+                                currentCache.set(bufCtx.strokeStyle, img);
                             }
                         }
                     }
@@ -813,7 +812,7 @@
                         bufCtx.drawImage(img, x - s / 2, y - s / 2, s, s);
 
                     if (render.setting.drawChildLabel) {
-                        c = d.flash ? "white" : "gray";
+                        //c = d.flash ? "white" : "gray";
 
                         bufCtx.fillStyle = c;
                         setFontSize(getNodeRadius(d) / 2);
@@ -850,7 +849,7 @@
                     s = getNodeRadius(d);
 
                     if (render.setting.drawParent) {
-                        c = getSelectedColor(d);
+                        c = d.color;
 
                         bufCtx.save();
 
@@ -870,9 +869,9 @@
                         bufCtx.strokeStyle = "transparent";
                         bufCtx.fillStyle = drawPI ? "transparent" : c;
                         bufCtx.arc(x, y, s, 0, PI_CIRCLE, true);
-                        bufCtx.closePath();
                         bufCtx.fill();
                         bufCtx.stroke();
+                        bufCtx.closePath();
                         if (drawPI) {
                             bufCtx.clip();
                             bufCtx.drawImage(d.img, x - s, y - s, s * 2, s * 2);
@@ -920,8 +919,7 @@
          */
         function generateNeonBall(w, h, r, g, b, a) {
 
-            if (!tempCanvas)
-                tempCanvas = document.createElement("canvas");
+            var tempCanvas = document.createElement("canvas");
 
             tempCanvas.width = w;
             tempCanvas.height = h;
@@ -950,17 +948,13 @@
          */
         function colorize(img, r, g, b, a) {
 
-            if (!tempCanvas)
-                tempCanvas = document.createElement("canvas");
+            var tempCanvas = document.createElement("canvas");
 
             if (!img || !img.width)
                 return tempCanvas;
 
-            if (tempCanvas.width != img.width)
-                tempCanvas.width = img.width;
-
-            if (tempCanvas.height != img.height)
-                tempCanvas.height = img.height;
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
 
             var imgCtx = tempCanvas.getContext("2d"),
                 imgData, i;
@@ -1020,7 +1014,7 @@
             , links
             , incData
             , idLayer = layersCounter++
-            , layer = d3.select(parentNode)
+            , layer
             , valid
             , canvas
             , ctx
@@ -1040,7 +1034,8 @@
             function makeGetterSetter(obj, key) {
                 return {
                     get : function() { return obj[key]; },
-                    set : function(value) { obj[key] = value; }
+                    set : function(value) { obj[key] = value; },
+                    enumerable: true
                 }
             }
 
@@ -1052,8 +1047,8 @@
             Object.defineProperty(bh.setting, 'padding', makeGetterSetter(render.setting, 'padding'));
             Object.defineProperty(bh.setting, 'blendingLighter', {
                 get : function() { return render.setting.compositeOperation === 'lighter'; },
-                set : function(value) { render.setting.compositeOperation = value === true ? 'lighter' : 'source-over'; }
-
+                set : function(value) { render.setting.compositeOperation = value === true ? 'lighter' : 'source-over'; },
+                enumerable: true
             });
         })();
 
@@ -1167,7 +1162,7 @@
                 if (n.fixed) {
                     n.x = xW(n.x);
                     n.y = yH(n.y);
-                    if (bh.getCreateNearParent()(d, n.nodeValue)) {
+                    if (bh.getCreateNearParent()(d, n)) {
                          n.x = p.x;
                          n.y = p.y;
                     }
@@ -1188,7 +1183,7 @@
 
                 n.parent = p;
 
-                n.visible = bh.getVisibleByStep()(d, n.nodeValue);
+                n.visible = bh.getVisibleByStep()(d, n);
                 fn = parser.setting.getChildKey()(n.nodeValue);
 
                 n.flash = 100;
@@ -1422,8 +1417,10 @@
             if (!(inData || []).length)
                 return;
 
-            var w = width || parentNode.clientWidth;
-            var h = height || parentNode.clientHeight;
+            layer = d3.select(parentNode);
+
+            var w = width || layer.node().clientWidth;
+            var h = height || layer.node().clientHeight;
 
             bh.size([w, h]);
 
