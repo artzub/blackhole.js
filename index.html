@@ -20,8 +20,8 @@
         }
 
         #canvas-svg {
-            width: 500px;
-            height: 500px;
+            width: 700px;
+            height: 700px;
         }
     </style>
 </head>
@@ -52,12 +52,14 @@
 
                 doc.selectAll('event').each(function (d) {
                     d = d3.select(this);
+                    var a = d.attr('action');
                     res.push({
                         id : res.length,
                         date: +d.attr('date'),
                         author: d.attr('author'),
                         filename: d.attr('filename'),
-                        action: d.attr('action')
+                        action: a,
+                        actOrder: a === 'A' ? 0 : a === 'M' ? 1 : 2
                     });
                 });
 
@@ -65,30 +67,41 @@
             })();
 
             bh.stop();
-            bh.runShow(data, 0, 0);
+            bh.runShow(data.sort(function(a, b) {
+                return d3.ascending(a.date, b.date);
+            }).sort(function(a,  b) {
+                return d3.ascending(a.actOrder, b.actOrder);
+            }), 0, 0);
         }
 
         var bh = d3.blackHole("#canvas-svg");
 
-        bh.parser.getGroupBy(function(d) { return d.date; })
+        bh.parser
+                .getGroupBy(function(d) { return d.date; })
                 .getParent(function(d) {return d.author;})
                 .getParentKey(function(d) {return d;})
                 .getChildKey(function(d) {return d.filename;})
-                .getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); });
+                .getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); })
+        ;
 
-        bh.render.onGetParentLabel(function(d) {return d.nodeValue;})
-                .onGetChildLabel(function(d) {return d.nodeValue.filename;});
-
-        bh.processor.onCheckSkipping(function(){ return true; });
-        bh.getVisibleByStep(function(d, n) {
-            return !(d.action == "D");
-        });
-        bh.getCreateNearParent(function(d, n) {return d.action == "A";});
+        bh.render
+                .onGetParentLabel(function(d) {return d.nodeValue;})
+                .onGetChildLabel(function(d) {return d.nodeValue.filename;})
+        ;
 
         var stepDate = 24 * 60 * 60 * 1000;
-        bh.processor.onCalcRightBound(function(l) {
-            return l + stepDate;
-        });
+        bh.processor
+                .onCheckSkipping(function(){ return true; })
+                .onCalcRightBound(function(l) {
+                    return l + stepDate;
+                })
+        ;
+
+        bh.getVisibleByStep(function(d, n) {
+            return !(d.action == "D");
+        }).getCreateNearParent(function(d, n) {return d.action == "A";})
+        ;
+
 
         function chch(d) {
             bh.setting[d] = this.checked;

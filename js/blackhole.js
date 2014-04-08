@@ -601,10 +601,18 @@
 
         var defImg
             , particleImg
-            , tempCanvas
+            , trackCanvas
+            , trackCtx
             , bufCanvas
             , bufCtx
             ;
+
+        render.reset = function() {
+            trackCanvas =
+            trackCtx =
+            bufCanvas =
+            bufCtx = null
+        };
 
         function setFontSize(size) {
             fontSize = size;
@@ -624,54 +632,70 @@
             return d3.ascending(b.opacity, a.opacity);
         }
 
-        function drawTail(c, d, x, y, vanishing) {
-            if (!vanishing)
-                bufCtx.beginPath();
+        /**
+         * Draw tracks of particles
+         * @param nodes
+         * @returns {HTMLCanvasElement|null}
+         */
+        function drawTrack(nodes) {
+            if(!nodes || !nodes.length)
+                null;
 
-            bufCtx.lineJoin = "round";
-            bufCtx.lineWidth = 1;//(radius(nr(d)) / 4)  || 1;
+            if (!trackCtx) {
+                trackCanvas = document.createElement("canvas");
+                trackCanvas.width = render.size[0];
+                trackCanvas.height = render.size[1];
 
-            var curAlpha = bufCtx.globalAlpha;
+                trackCtx = trackCanvas.getContext('2d');
+                trackCtx.lineJoin = "round";
+                trackCtx.lineWidth = 1;//(radius(nr(d)) / 4)  || 1;
+            }
 
-            var rs = d.paths.slice(0).reverse()
-                , lrs = rs.length
-                , p;
+            trackCtx.save();
 
-            if (!vanishing) {
-                bufCtx.moveTo(x, y);
+            trackCtx.fillStyle = "rgba(0, 0, 0, .15)";
+            trackCtx.fillRect(0, 0, render.size[0], render.size[1]);
+
+            var d, l = nodes.length, curColor, c = null;
+
+            trackCtx.fillStyle = "none";
+
+            while(--l > -1) {
+                d = nodes[l];
+
+                curColor = getSelectedColor(d);
+                if (!c || compereColor(c, curColor)) {
+                    c = curColor;
+                    trackCtx.strokeStyle = c.toString();
+                }
+
+                trackCtx.beginPath();
+
+                var rs = d.paths.slice(0).reverse()
+                    , p;
+
+                if(d.paths.length > 3 || !d.alive || !d.parent)
+                    d.paths.splice(0, 2);
+
+                trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
                 for (p in rs) {
                     if (!rs.hasOwnProperty(p))
                         continue;
 
-                    bufCtx.lineTo(
+                    trackCtx.lineTo(
                         Math.floor(rs[p].x),
                         Math.floor(rs[p].y)
                     );
                 }
-                bufCtx.stroke();
+                trackCtx.stroke();
+                d.parent && d.alive && (d.flash || d.paths.length > 0) && d.paths.push({
+                    x : d.x,
+                    y : d.y
+                });
             }
-            else {
-                for (p in rs) {
-                    if (!rs.hasOwnProperty(p))
-                        continue;
 
-                    bufCtx.beginPath();
-                    if (p < 1)
-                        bufCtx.moveTo(x, y);
-                    else
-                        bufCtx.moveTo(
-                            Math.floor(rs[p - 1].x),
-                            Math.floor(rs[p - 1].y)
-                        );
-                    bufCtx.lineTo(
-                        Math.floor(rs[p].x),
-                        Math.floor(rs[p].y)
-                    );
-                    bufCtx.stroke();
-                    bufCtx.globalAlpha = ((lrs - p) / lrs) * curAlpha;
-                }
-                bufCtx.globalAlpha = curAlpha;
-            }
+            trackCtx.restore();
+            return trackCanvas;
         }
 
         /**
@@ -705,7 +729,7 @@
                 , y
                 , s
                 , currentCache
-                , drawPI
+                , tracksImg
                 ;
 
             if (!lastEvent || !lastEvent.hasOwnProperty("translate"))
@@ -714,45 +738,25 @@
             bufCtx.save();
             bufCtx.clearRect(0, 0, render.size[0], render.size[1]);
 
-            if (render.setting.compositeOperation && bufCtx.globalCompositeOperation != render.setting.compositeOperation)
-                bufCtx.globalCompositeOperation = render.setting.compositeOperation;
-
             bufCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
             bufCtx.scale(lastEvent.scale, lastEvent.scale);
 
-            if (render.setting.drawChild) {
-                n = getChildNodes();
+            bufCtx.globalCompositeOperation = 'source-over';
 
-                n = n.sort(sortByOpacity).sort(sortByColor);
+            if (render.setting.drawChild || render.setting.drawChildLabel) {
+                n = (getChildNodes() || [])
+                    .sort(sortByOpacity)
+                    .sort(sortByColor);
 
                 currentCache = render.setting.drawAsPlasma ? neonBallCache : particleImageCache;
 
-                l = n.length;
+                tracksImg = drawTrack(n);
+                render.setting.drawTrack && tracksImg &&
+                    bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);
 
-                if (!render.setting.drawHalo && render.setting.drawTrack) {
-                    c = null;
-                    i = 100;
-
-                    bufCtx.fillStyle = 'none';
-                    bufCtx.globalAlpha = i * .01;
-
-                    while(--l > -1) {
-                        d = n[l];
-
-                        if (i != d.opacity) {
-                            i = d.opacity;
-                            bufCtx.globalAlpha = i * .01;
-                        }
-
-                        selectedColor = getSelectedColor(d);
-                        if (!c || compereColor(c, selectedColor)) {
-                            c = selectedColor;
-                            bufCtx.strokeStyle = c.toString();
-                        }
-
-                        drawTail(c, d, Math.floor(d.x), Math.floor(d.y), render.setting.drawVanishingTail);
-                    }
-                }
+                if (render.setting.compositeOperation
+                    && bufCtx.globalCompositeOperation != render.setting.compositeOperation)
+                    bufCtx.globalCompositeOperation = render.setting.compositeOperation;
 
                 l = n.length;
                 c = null;
@@ -774,25 +778,27 @@
                     if (!c || compereColor(c, selectedColor)) {
                         c = selectedColor;
 
-                        if (!render.setting.drawHalo) {
-                            if (beg) {
-                                bufCtx.stroke();
-                                bufCtx.fill();
-                            }
+                        if (render.setting.drawChild) {
+                            if (!render.setting.drawHalo) {
+                                if (beg) {
+                                    bufCtx.stroke();
+                                    bufCtx.fill();
+                                }
 
-                            bufCtx.beginPath();
-                            bufCtx.fillStyle = c.toString();
-                            beg = true;
-                        }
-                        else {
-                            bufCtx.strokeStyle = c.toString();
-                            img = currentCache.get(bufCtx.strokeStyle);
-                            if (!img) {
-                                img = render.setting.drawAsPlasma
-                                    ? generateNeonBall(64, 64, c.r, c.g, c.b, 1)
-                                    : colorize(particleImg, c.r, c.g, c.b, 1)
-                                ;
-                                currentCache.set(bufCtx.strokeStyle, img);
+                                bufCtx.beginPath();
+                                bufCtx.fillStyle = c.toString();
+                                beg = true;
+                            }
+                            else {
+                                bufCtx.strokeStyle = c.toString();
+                                img = currentCache.get(bufCtx.strokeStyle);
+                                if (!img) {
+                                    img = render.setting.drawAsPlasma
+                                        ? generateNeonBall(64, 64, c.r, c.g, c.b, 1)
+                                        : colorize(particleImg, c.r, c.g, c.b, 1)
+                                    ;
+                                    currentCache.set(bufCtx.strokeStyle, img);
+                                }
                             }
                         }
                     }
@@ -801,22 +807,19 @@
                     y = Math.floor(d.y);
                     s = getNodeRadius(d) * (render.setting.drawHalo ? render.setting.drawAsPlasma ? 8 : 10 : .8);
 
-                    if (render.setting.drawHalo && render.setting.drawTrack)
-                        drawTail(c, d, x, y, render.setting.drawVanishingTail);
-
-                    if (!render.setting.drawHalo) {
-                        bufCtx.moveTo(x + s, y);
-                        bufCtx.arc(x, y, s, 0, PI_CIRCLE, true);
+                    if (render.setting.drawChild) {
+                        if (!render.setting.drawHalo) {
+                            bufCtx.moveTo(x + s, y);
+                            bufCtx.arc(x, y, s, 0, PI_CIRCLE, true);
+                        }
+                        else
+                            bufCtx.drawImage(img, x - s / 2, y - s / 2, s, s);
                     }
-                    else
-                        bufCtx.drawImage(img, x - s / 2, y - s / 2, s, s);
 
                     if (render.setting.drawChildLabel) {
-                        //c = d.flash ? "white" : "gray";
-
-                        bufCtx.fillStyle = c;
-                        setFontSize(getNodeRadius(d) / 2);
-                        bufCtx.fillText(getChildLabel(d), x, y + s * 1.5);
+                        bufCtx.fillStyle = c.toString();// d.flash ? "white" : "gray";
+                        setFontSize(s/2);
+                        bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0));
                     }
                 }
                 if (!render.setting.drawHalo && beg) {
@@ -863,18 +866,19 @@
                             bufCtx.stroke();
                         }
 
-                        drawPI = render.setting.drawParentImg && d.img && d.img.width;
+                        img = render.setting.drawParentImg ? (d.img || defImg) : null;
+                        img = img && img.width && img.height ? img : null;
 
                         bufCtx.beginPath();
                         bufCtx.strokeStyle = "transparent";
-                        bufCtx.fillStyle = drawPI ? "transparent" : c;
+                        bufCtx.fillStyle = img ? "transparent" : c;
                         bufCtx.arc(x, y, s, 0, PI_CIRCLE, true);
                         bufCtx.fill();
                         bufCtx.stroke();
                         bufCtx.closePath();
-                        if (drawPI) {
+                        if (img) {
                             bufCtx.clip();
-                            bufCtx.drawImage(d.img, x - s, y - s, s * 2, s * 2);
+                            bufCtx.drawImage(img, x - s, y - s, s * 2, s * 2);
                         }
 
                         bufCtx.restore();
@@ -1001,6 +1005,7 @@
                     , rateFlash : 2.5 // rate of decrease of flash
                     , blendingLighter : false // blending mode for canvas
                     , increaseChildWhenCreated : false // when a child is created his size will be increased
+                    , createNearParent : false
 
                     //, showCountExt : true // show table of file's extension
                     //, onlyShownExt : true // show only extension which is shown
@@ -1016,6 +1021,8 @@
             , idLayer = layersCounter++
             , layer
             , valid
+            , rqId
+            , restart
             , canvas
             , ctx
 
@@ -1162,7 +1169,7 @@
                 if (n.fixed) {
                     n.x = xW(n.x);
                     n.y = yH(n.y);
-                    if (bh.getCreateNearParent()(d, n)) {
+                    if (bh.setting.createNearParent && bh.getCreateNearParent()(d, n)) {
                          n.x = p.x;
                          n.y = p.y;
                     }
@@ -1296,10 +1303,6 @@
                     d.x -= x;
                     d.y -= y;
                 }
-                d.paths && (d.flash || d.paths.length > 1) && d.paths.push({
-                    x : d.x,
-                    y : d.y
-                });
             };
         }
 
@@ -1320,22 +1323,6 @@
 
             d.visible && !d.opacity
                 && (d.visible = false);
-
-            if (d.paths) {
-                d.pathLife = (d.pathLife || 0);
-                if (d.pathLife++ > 0) {
-                    d.pathLife = 0;
-                    if (d.paths.length) {
-                        if (d.flash)
-                            d.paths.shift();
-                        else {
-                            d.paths.shift();
-                            d.paths.shift();
-                            d.paths.shift();
-                        }
-                    }
-                }
-            }
         }
 
         function filterChild(d) {
@@ -1372,7 +1359,7 @@
         }
 
         function doRender() {
-            requestAnimationFrame(doRender, undefined);
+            rqId = requestAnimationFrame(doRender, undefined);
 
             //TODO: lHis && lHis.style("display", setting.showHistogram ? null : "none");
             //TODO: lLeg && lLeg.style("display", setting.showCountExt ? null : "none");
@@ -1401,7 +1388,10 @@
         });
 
         processor.onStarted(function() {
-            doRender();
+            restart = false;
+            render.reset();
+            if (!rqId)
+                doRender();
             doStarted();
         });
 
@@ -1412,6 +1402,7 @@
          * @param {Number} height
          */
         bh.runShow = function(inData, width, height) {
+            restart = true;
             processor.killWorker();
 
             if (!(inData || []).length)
