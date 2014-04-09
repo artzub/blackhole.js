@@ -67,11 +67,7 @@
             })();
 
             bh.stop();
-            bh.runShow(data.sort(function(a, b) {
-                return d3.ascending(a.date, b.date);
-            }).sort(function(a,  b) {
-                return d3.ascending(a.actOrder, b.actOrder);
-            }), 0, 0);
+            bh.runShow(data, 0, 0);
         }
 
         var bh = d3.blackHole("#canvas-svg");
@@ -86,7 +82,7 @@
 
         bh.render
                 .onGetParentLabel(function(d) {return d.nodeValue;})
-                .onGetChildLabel(function(d) {return d.nodeValue.filename;})
+                .onGetChildLabel(function(d) {return d.nodeValue.filename.replace(/.*\/(.*)$/, "$1");})
         ;
 
         var stepDate = 24 * 60 * 60 * 1000;

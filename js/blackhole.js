@@ -635,11 +635,12 @@
         /**
          * Draw tracks of particles
          * @param nodes
+         * @param lastEvent
          * @returns {HTMLCanvasElement|null}
          */
-        function drawTrack(nodes) {
+        function drawTrack(nodes, lastEvent) {
             if(!nodes || !nodes.length)
-                null;
+                return null;
 
             if (!trackCtx) {
                 trackCanvas = document.createElement("canvas");
@@ -656,6 +657,9 @@
             trackCtx.fillStyle = "rgba(0, 0, 0, .15)";
             trackCtx.fillRect(0, 0, render.size[0], render.size[1]);
 
+            trackCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
+            trackCtx.scale(lastEvent.scale, lastEvent.scale);
+
             var d, l = nodes.length, curColor, c = null;
 
             trackCtx.fillStyle = "none";
@@ -669,13 +673,20 @@
                     trackCtx.strokeStyle = c.toString();
                 }
 
+                if (!d.paths)
+                    continue;
+
                 trackCtx.beginPath();
 
                 var rs = d.paths.slice(0).reverse()
                     , p;
 
-                if(d.paths.length > 3 || !d.alive || !d.parent)
-                    d.paths.splice(0, 2);
+                /*d.pathLife = (d.pathLife || 0);
+                if (d.pathLife++ > 0) {
+                    d.pathLife = 0;*/
+                    if (d.paths.length > 2)
+                        d.paths.splice(0, d.flash ? 2 : 3);
+                //}
 
                 trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
                 for (p in rs) {
@@ -688,7 +699,8 @@
                     );
                 }
                 trackCtx.stroke();
-                d.parent && d.alive && (d.flash || d.paths.length > 0) && d.paths.push({
+
+                d.alive && d.parent && (d.flash || d.paths.length > 1) && d.paths.push({
                     x : d.x,
                     y : d.y
                 });
@@ -738,21 +750,27 @@
             bufCtx.save();
             bufCtx.clearRect(0, 0, render.size[0], render.size[1]);
 
+            if (render.setting.drawTrack && (render.setting.drawChild || render.setting.drawChildLabel)) {
+                n = (getChildNodes() || [])
+                    .sort(sortByOpacity)
+                    .sort(sortByColor);
+
+                tracksImg = drawTrack(n, lastEvent);
+                render.setting.drawTrack && tracksImg &&
+                bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);
+            }
+
             bufCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
             bufCtx.scale(lastEvent.scale, lastEvent.scale);
 
             bufCtx.globalCompositeOperation = 'source-over';
 
             if (render.setting.drawChild || render.setting.drawChildLabel) {
-                n = (getChildNodes() || [])
+                n = n || (getChildNodes() || [])
                     .sort(sortByOpacity)
                     .sort(sortByColor);
 
                 currentCache = render.setting.drawAsPlasma ? neonBallCache : particleImageCache;
-
-                tracksImg = drawTrack(n);
-                render.setting.drawTrack && tracksImg &&
-                    bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);
 
                 if (render.setting.compositeOperation
                     && bufCtx.globalCompositeOperation != render.setting.compositeOperation)
@@ -888,8 +906,8 @@
                         c = d.flash ? "white" : "gray";
 
                         bufCtx.fillStyle = c;
-                        setFontSize(getNodeRadius(d) / 2);
-                        bufCtx.fillText(getParentLabel(d), x, y + s * 1.5);
+                        setFontSize(s / 2);
+                        bufCtx.fillText(getParentLabel(d), x, y + s * (render.setting.drawParent ? 1.5 : 0.5));
                     }
                 }
             }
