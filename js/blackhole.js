@@ -106,6 +106,8 @@
                     getValue : null,
                     getParentRadius : null,
                     getChildRadius : null,
+                    getParentPosition : null,
+                    getParentFixed : null,
 
                     parentColor: d3.scale.category20b(),
                     childColor: d3.scale.category20()
@@ -172,6 +174,14 @@
             parser.setting.getChildRadius(function(/*d*/) {
                 return 2;
             });
+
+            parser.setting.getParentPosition(function(/*d, position*/) {
+                return null;
+            });
+
+            parser.setting.getParentFixed(function(/*d*/) {
+                return true;
+            });
         })();
 
         /**
@@ -200,7 +210,7 @@
          * Create a Node
          * @param d
          * @param type
-         * @returns {{x: number, y: number, id: *, size: {valueOf: valueOf}, fixed: boolean, visible: boolean, links: number, type: *, color: (string|*), d3color: *, flashColor: *, cat: *, parent: *, img: *, nodeValue: *}}
+         * @returns {Object}
          * @constructor
          */
         function Node(d, type) {
@@ -217,6 +227,7 @@
                 , w5 = w / 5
                 , h2 = h / 2
                 , h5 = h / 5
+                , parentPos
                 ;
 
             if (type == typeNode.child) {
@@ -228,22 +239,31 @@
             x = w * Math.random();
             y = h * Math.random();
 
+            !isChild &&
+                (parentPos = parser.setting.getParentPosition()(d, [x, y]));
+
             if (type == typeNode.parent) {
-                if (randomTrue()) {
-                    x = x > w5 && x < w2
-                        ? x / 5
-                        : x > w2 && x < w - w5
-                        ? w - x / 5
-                        : x
-                    ;
+                if (!parentPos || parentPos.length < 2) {
+                    if (randomTrue()) {
+                        x = x > w5 && x < w2
+                            ? x / 5
+                            : x > w2 && x < w - w5
+                            ? w - x / 5
+                            : x
+                        ;
+                    }
+                    else {
+                        y = y > h5 && y < h2
+                            ? y / 5
+                            : y > h2 && y < h - h5
+                            ? h - y / 5
+                            : y
+                        ;
+                    }
                 }
                 else {
-                    y = y > h5 && y < h2
-                        ? y / 5
-                        : y > h2 && y < h - h5
-                        ? h - y / 5
-                        : y
-                    ;
+                    x = parentPos[0];
+                    y = parentPos[1];
                 }
             }
 
@@ -253,6 +273,7 @@
                 id : type + parser.setting.getKey()(d, type),
                 size : !isChild ? parser.setting.getParentRadius()(d) : parser.setting.getChildRadius()(d),
                 fixed : true,
+                permanentFixed : !isChild ? parser.setting.getParentFixed()(d) : false,
                 visible : false,
                 links : 0,
                 type : type,
@@ -1170,7 +1191,7 @@
                 n, p, fn;
 
             p = d.parentNode;
-            p.fixed = false;
+            p.fixed = p.permanentFixed;
 
             if (!l)
                 console.log(d);
