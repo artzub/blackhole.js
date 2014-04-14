@@ -572,6 +572,7 @@
             , onGetLinks: null
             , onGetLastEvent: null
             , onGetSelectedColor: null
+            , onGetSelectedNode: null
             , onGetNodeRadius: null
             , setting : {
                 onGetParentLabel: null,
@@ -639,12 +640,17 @@
             return getFun(render, "onGetNodeRadius")(d);
         }
 
+        function getSelectedNode() {
+            return getFun(render, "onGetSelectedNode")();
+        }
+
         var defImg
             , particleImg
             , trackCanvas
             , trackCtx
             , bufCanvas
             , bufCtx
+            , selectedNode
             ;
 
         render.reset = function() {
@@ -751,6 +757,76 @@
         }
 
         /**
+         * Draw links between source and target nodes
+         * @param links list pairs {source : {Node}, target : {Node}} @see parser.Node
+         * @param selected
+         */
+        function drawLinks(linksCtx, links, selected) {
+            if(!links || !links.length || !linksCtx)
+                return;
+
+            linksCtx.save();
+
+            linksCtx.lineCap="round";
+            linksCtx.lineJoin="round";
+
+            if (!render.setting.drawEdge && selected)
+                links = links.filter(function(d) {
+                    return d.source == selectedNode || d.target == selected;
+                });
+
+            var d
+                , l = links.length
+                , curColor
+                , c = null
+                , base
+                , child
+                , i = 100
+                ;
+
+            linksCtx.fillStyle = "none";
+
+            while(--l > -1) {
+                d = links[l];
+
+                if (!d.source || !d.target)
+                    continue;
+
+                child = d.source.type == typeNode.child;
+                base = child ? d.source : d.target;
+
+                curColor = getSelectedColor(base);
+                if (!c || compereColor(c, curColor)) {
+                    c = curColor;
+                    linksCtx.strokeStyle = c.toString();
+                }
+
+                if (i != base.opacity) {
+                    i = base.opacity;
+                    bufCtx.globalAlpha = i * .01;
+                }
+
+                linksCtx.lineWidth = getNodeRadius(base) || 1;
+                linksCtx.beginPath();
+
+                var sx = child ? d.target.x : d.source.x,
+                    sy = child ? d.target.y : d.source.y,
+                    tx = !child ? d.target.x : d.source.x,
+                    ty = !child ? d.target.y : d.source.y;
+
+                linksCtx.moveTo(Math.floor(sx), Math.floor(sy));
+                var x3 = .3 * ty - .3 * sy + .8 * sx + .2 * tx,
+                    y3 = .8 * sy + .2 * ty - .3 * tx + .3 * sx,
+                    x4 = .3 * ty - .3 * sy + .2 * sx + .8 * tx,
+                    y4 = .2 * sy + .8 * ty - .3 * tx + .3 * sx;
+                linksCtx.bezierCurveTo(x3, y3, x4, y4, tx, ty);
+                linksCtx.stroke();
+            }
+
+            linksCtx.restore();
+        }
+
+        /**
          * draw scene
          * @returns {HTMLCanvasElement}
          */
@@ -770,6 +846,7 @@
 
             var lastEvent = getLastEvent()
                 , n
+                , cn
                 , l
                 , i
                 , img
@@ -791,11 +868,11 @@
             bufCtx.clearRect(0, 0, render.size[0], render.size[1]);
 
             if (render.setting.drawTrack && (render.setting.drawChild || render.setting.drawChildLabel)) {
-                n = (getChildNodes() || [])
+                cn = (getChildNodes() || [])
                     .sort(sortByOpacity)
                     .sort(sortByColor);
 
-                tracksImg = drawTrack(n, lastEvent);
+                tracksImg = drawTrack(cn, lastEvent);
                 render.setting.drawTrack && tracksImg &&
                 bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);
             }
@@ -805,8 +882,14 @@
 
             bufCtx.globalCompositeOperation = 'source-over';
 
+            selectedNode = getSelectedNode();
+            if (render.setting.drawEdge || selectedNode) {
+                n = getLinks() || [];
+                drawLinks(bufCtx, n, selectedNode);
+            }
+
             if (render.setting.drawChild || render.setting.drawChildLabel) {
-                n = n || (getChildNodes() || [])
+                cn = cn || (getChildNodes() || [])
                     .sort(sortByOpacity)
                     .sort(sortByColor);
 
@@ -816,7 +899,7 @@
                     && bufCtx.globalCompositeOperation != render.setting.compositeOperation)
                     bufCtx.globalCompositeOperation = render.setting.compositeOperation;
 
-                l = n.length;
+                l = cn.length;
                 c = null;
                 i = 100;
                 beg = false;
@@ -825,7 +908,7 @@
                 bufCtx.globalAlpha = i * .01;
 
                 while(--l > -1) {
-                    d = n[l];
+                    d = cn[l];
 
                     if (i != d.opacity) {
                         i = d.opacity;
@@ -1431,8 +1514,19 @@
 
         render.onGetChildNodes(function() { return forceChild ? forceChild.nodes().filter(filterVisible) : []; });
         render.onGetParentNodes(function() { return forceParent ? forceParent.nodes().filter(filterVisible) : []; });
-        render.onGetLinks(function() { return links ? links.values() : []; });
+        render.onGetLinks(function() {
+            return links
+                ? links.values().filter(function(d) {
+                    return d.source && d.target
+                        && filterVisible(d.source)
+                        && filterVisible(d.target)
+                        && d.source.opacity
+                        && d.target.opacity
+                })
+                : [];
+        });
         render.onGetLastEvent(function() { return lastEvent; });
+        render.onGetSelectedNode(function() { return selected; });
         render.onGetNodeRadius(function(d) {
             return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
         });
@@ -1638,6 +1732,7 @@
 
             incData = inData.sort(bh.sort());
 
+            links = d3.map({});
             nodes = parser.nodes(incData);
 
             processor.boundRange = d3.extent(incData.map(parser.setting.getGroupBy()));

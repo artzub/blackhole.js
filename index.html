@@ -85,7 +85,7 @@
             cur += items ? items.length : 0;
             uiStatus.text([
                 "items:",
-                cur * all * .001,
+                (cur / all) * 100,
                 "% from:",
                 new Date(l).toDateString(),
                 " to:",
