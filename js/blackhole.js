@@ -1,5 +1,7 @@
 /**
  * Created by artzub on 27.01.14.
+ * @author Artem Zubkov
+ * @version 1.0.0
  */
 
 "use strict";
@@ -8,8 +10,8 @@
     /**
      * Asynchronous forEach
      * @param {Array} items
-     * @param {function} fn
-     * @param {number} time
+     * @param {Function} fn
+     * @param {Number} time
      */
     function asyncForEach(items, fn, time) {
         if (!(items instanceof Array))
@@ -180,7 +182,7 @@
             });
 
             parser.setting.getParentFixed(function(/*d*/) {
-                return true;
+                return false;
             });
         })();
 
@@ -400,7 +402,7 @@
             , onFilter : null
             , setting : {
                 onCalcRightBound : null,
-                onCheckSkipping : null
+                skipEmptyDate : false
             }
         };
 
@@ -433,61 +435,77 @@
             return getFun(processor.setting, "onCalcRightBound")(dl);
         }
 
-        function doFinished(dl) {
-            doFunc("onFinished")(dl);
+        function doFinished(dr) {
+            doFunc("onFinished")(dr);
         }
 
         function doStarted() {
             doFunc("onStarted")();
         }
 
-        function doProcessing(dr) {
-            doFunc("onProcessing")(dr);
+        function doProcessing(items, dl, dr) {
+            doFunc("onProcessing")(items, dl, dr);
         }
 
-        function doProcessed(dr) {
-            doFunc("onProcessed")(dr);
+        function doProcessed(items, dl, dr) {
+            doFunc("onProcessed")(items, dl, dr);
         }
 
         function doRecalc(d) {
             doFunc("onRecalc")(d);
         }
 
-        function doCheckSkipping() {
-            return getFun(processor.setting, "onCheckSkipping")();
-        }
-
+        var tempTimeout;
         function loop() {
 
-            if (stop) {
-                killWorker();
-                return;
+            if (tempTimeout) {
+                clearTimeout(tempTimeout);
+                tempTimeout = null;
             }
 
-            if (pause)
-                return;
+            while(true) {
 
-            var dl, dr;
+                if (stop) {
+                    killWorker();
+                    return;
+                }
 
-            dl = processor.boundRange[0];
-            dr = doCalcRightBound(dl);
-            processor.boundRange[0] = dr;
+                if (pause)
+                    return;
 
-            var visTurn = doFilter(dl, dr);
+                var dl, dr;
 
-            asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
+                dl = processor.boundRange[0];
+                dr = doCalcRightBound(dl);
+                processor.boundRange[0] = dr;
 
-            doProcessing(dr);
+                var visTurn = doFilter(dl, dr);
 
-            if (dl >= processor.boundRange[1]) {
-                killWorker();
-                doFinished(dl);
-            } else {
-                if (!visTurn.length && doCheckSkipping())
-                    loop();
+                visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
+
+                doProcessing(visTurn, dl, dr);
+
+                try {
+                    if (dl > processor.boundRange[1]) {
+                        killWorker();
+                        doFinished(dl);
+                        throw new Error("break");
+                    } else {
+                        if (!visTurn.length && processor.setting.skipEmptyDate) {
+                            //loop();
+                            //tempTimeout = setTimeout(loop, 1);
+                        }
+                        else
+                            throw new Error("break");
+                    }
+                }
+                catch (e) {
+                    break;
+                }
+                finally {
+                    doProcessed(visTurn, dl, dr);
+                }
             }
-
-            doProcessed();
         }
 
         processor.start = function() {
@@ -572,6 +590,7 @@
                 drawParentImg: false,
 
                 padding: 0,
+                lengthTrack: 2,
                 compositeOperation: null
             }
         };
@@ -705,8 +724,8 @@
                 /*d.pathLife = (d.pathLife || 0);
                 if (d.pathLife++ > 0) {
                     d.pathLife = 0;*/
-                    if (d.paths.length > 2)
-                        d.paths.splice(0, d.flash ? 2 : 3);
+                    if (d.paths.length > render.setting.lengthTrack)
+                        d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
                 //}
 
                 trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
@@ -1053,7 +1072,9 @@
                     //, skipEmptyDate : true // skip empty date
                 }
             }
+            , hashOnAction = {}
             , lastEvent
+            , selected
             , nodes
             , links
             , incData
@@ -1073,9 +1094,32 @@
             , forceParent
             ;
 
+        bh.parents = function(arg) {
+            if (!arguments.length)
+                return parser.parentHash;
+            if (arg instanceof Object)
+                parser.parentHash = d3.map(arg);
+            return bh;
+        };
+
+        bh.children = function(arg) {
+            if (!arguments.length)
+                return parser.childHash;
+            if (arg instanceof Object)
+                parser.childHash = d3.map(arg);
+            return bh;
+        };
+
+        bh.categories = function(arg) {
+            if (!arguments.length)
+                return parser.categoryHash;
+            if (arg instanceof Object)
+                parser.categoryHash = d3.map(arg);
+            return bh;
+        };
 
         (function() {
-            var reg = new RegExp("^draw");
+            var reg = /^draw/;
 
             function makeGetterSetter(obj, key) {
                 return {
@@ -1085,17 +1129,22 @@
                 }
             }
 
-            d3.map(render.setting).forEach(function(key) {
-                if (reg.test(key))
-                    Object.defineProperty(bh.setting, key, makeGetterSetter(render.setting, key));
+            d3.map(render.setting).keys()
+                .filter(function(key) { return reg.test(key); })
+                .concat(['lengthTrack', 'padding'])
+                .forEach(function(key) {
+                Object.defineProperty(bh.setting, key, makeGetterSetter(render.setting, key));
             });
 
-            Object.defineProperty(bh.setting, 'padding', makeGetterSetter(render.setting, 'padding'));
+            Object.defineProperty(bh.setting, 'parentColors', makeGetterSetter(parser.setting, 'parentColor'));
+            Object.defineProperty(bh.setting, 'categoryColors', makeGetterSetter(parser.setting, 'childColor'));
+            Object.defineProperty(bh.setting, 'skipEmptyDate', makeGetterSetter(processor.setting, 'skipEmptyDate'));
             Object.defineProperty(bh.setting, 'blendingLighter', {
                 get : function() { return render.setting.compositeOperation === 'lighter'; },
                 set : function(value) { render.setting.compositeOperation = value === true ? 'lighter' : 'source-over'; },
                 enumerable: true
             });
+
         })();
 
         bh.setting.drawEdge = false; // draw a edge
@@ -1111,11 +1160,134 @@
         bh.setting.drawParentImg = true; // draw an image of parent
         bh.setting.padding = 25; // parent padding
         bh.setting.blendingLighter = true;
+        bh.setting.skipEmptyDate = false; // skipping empty date
+
+        bh.on = function(key, value) {
+            if (!key || !(typeof key === 'string'))
+                return bh;
+            key = key.toLowerCase();
+            if (arguments.length < 2)
+                return isFun(hashOnAction[key]) ? hashOnAction[key]() : undefined;
+            hashOnAction[key](value);
+            return bh;
+        };
+
+        (function() {
+            hashOnAction['calcrightbound'] = processor.setting.onCalcRightBound;
+            hashOnAction['processing'] = processor.onProcessing;
+            hashOnAction['processed'] = processor.onProcessed;
+
+            hashOnAction['getchildlabel'] = render.setting.onGetChildLabel;
+            hashOnAction['getparentlabel'] = render.setting.onGetParentLabel;
+            hashOnAction['getselectedcolor'] = attachGetSelectedColor;
+            hashOnAction['getvisiblebystep'] = attachGetVisibleByStep;
+            hashOnAction['getcreatenearparent'] = attachGetCreateNearParent;
+
+            var reg = /^get/;
+            d3.map(parser.setting).keys().forEach(function(key) {
+                if (reg.test(key))
+                    hashOnAction[key.toLowerCase()] = parser.setting[key];
+            });
+        })();
+
+        function defaultSort(a, b) {
+            var fn = parser.setting.getGroupBy();
+            return d3.ascending(fn(a), fn(b));
+        }
+        bh.sort = function(arg) {
+            if (!arguments.length)
+                return bh.sort.value;
+            if(!isFun(arg))
+                arg = defaultSort;
+            bh.sort.value = arg;
+            return bh;
+        };
+        bh.sort(null);
+
+        function defaultFilter(l, r) {
+            return incData.filter(function (d) {
+                var value = parser.setting.getGroupBy()(d);
+                return value >= l && value < r;
+            });
+        }
+        bh.filter = function(arg) {
+            if (!arguments.length)
+                return processor.onFilter();
+            if(!isFun(arg))
+                arg = defaultFilter;
+            processor.onFilter(arg);
+            return bh;
+        };
+        bh.filter(null);
 
 
-        bh.parser = parser.setting;
-        bh.processor = processor.setting;
-        bh.render = render.setting;
+        function defaultGetSelectedColor(d) {
+            return d.flash ? d.flashColor : d.d3color
+        }
+        function attachGetSelectedColor(arg) {
+            if (!arguments.length)
+                return render.onGetSelectedColor();
+            if(!isFun(arg))
+                arg = defaultGetSelectedColor;
+            render.onGetSelectedColor(arg);
+        }
+        bh.on('GetSelectedColor', defaultGetSelectedColor);
+
+        function defaultGetVisibleByStep() {
+            return true;
+        }
+        function attachGetVisibleByStep(arg) {
+            if(!arguments.length)
+                return attachGetVisibleByStep.value;
+            if(!isFun(arg))
+                arg = defaultGetVisibleByStep;
+            attachGetVisibleByStep.value = arg;
+        }
+        bh.on('GetVisibleByStep', defaultGetVisibleByStep);
+
+        function defaultGetCreateNearParent() {
+            return false;
+        }
+        function attachGetCreateNearParent(arg) {
+            if(!arguments.length)
+                return attachGetCreateNearParent.value;
+            if(!isFun(arg))
+                arg = defaultGetCreateNearParent;
+            attachGetCreateNearParent.value = arg;
+        }
+        bh.on('GetCreateNearParent', defaultGetCreateNearParent);
+
+        ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode'].forEach(function(key) {
+            hashOnAction[key] = func(hashOnAction, key);
+        });
+
+        function doFunc(key) {
+            return getFun(hashOnAction, key);
+        }
+
+        function doStating() {
+            return doFunc('starting')();
+        }
+
+        function doStarted() {
+            return doFunc('started')();
+        }
+
+        function doFinished() {
+            return doFunc('finished')();
+        }
+
+        function doMouseOverNode() {
+            return doFunc('mouseovernode')();
+        }
+
+        function doMouseOutNode() {
+            return doFunc('mouseoutnode')();
+        }
+
+        function doMouseMove() {
+            return doFunc('mousemove')();
+        }
 
         bh.size = function(arg) {
             if (!arguments.length)
@@ -1129,8 +1301,8 @@
         }
 
         function checkVisible(d, offsetx, offsety) {
-            var tx = lastEvent.translate[0]/lastEvent.scale,
-                ty = lastEvent.translate[1]/lastEvent.scale
+            var tx = lastEvent.translate[0]/lastEvent.scale
+                , ty = lastEvent.translate[1]/lastEvent.scale
                 ;
 
             offsetx = offsetx || 0;
@@ -1147,125 +1319,6 @@
                 && d.y - d.size < -ty + offsety[1] + bh.size()[1]/lastEvent.scale
                 );
         }
-
-        function filterVisible(d) {
-            return checkVisible(d) && (d.visible || d.alive);
-        }
-
-        render.onGetChildNodes(function() { return forceChild ? forceChild.nodes().filter(filterVisible) : []; });
-        render.onGetParentNodes(function() { return forceParent ? forceParent.nodes().filter(filterVisible) : []; });
-        render.onGetLinks(function() { return links ? links.values() : []; });
-        render.onGetLastEvent(function() {
-            return lastEvent;
-        });
-        render.onGetSelectedColor(function(d) {
-            return d.flash ? d.flashColor : d.d3color
-        });
-        render.onGetNodeRadius(function(d) {
-            return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
-        });
-
-        bh.getVisibleByStep = func(bh, 'getVisibleByStep');
-        bh.getVisibleByStep(function() { return true; });
-        bh.getCreateNearParent = func(bh, 'getCreateNearParent');
-        bh.getCreateNearParent(function() { return false; });
-
-        //TODO: processor.onProcessing();
-        //TODO: processor.onProcessed();
-
-        processor.onFilter(function(l, r) {
-            return incData.filter(function (d) {
-                var value = parser.setting.getGroupBy()(d);
-                return value >= l && value < r;
-            });
-        });
-
-        processor.onRecalc(function reCalc(d) {
-            if (!processor.IsRun())
-                return;
-
-            //TODO: lCom.showCommitMessage(d.message);
-            //TODO: appendExtLegend(d.sha);
-
-            var l = d.nodes.length,
-                n, p, fn;
-
-            p = d.parentNode;
-            p.fixed = p.permanentFixed;
-
-            if (!l)
-                console.log(d);
-            else {
-                p.alive = bh.setting.parentLife > 0 ? bh.setting.parentLife : 1;
-                p.opacity = 100;
-                p.flash = 100;
-                p.visible = true;
-            }
-
-            while(--l > -1) {
-                n = d.nodes[l];
-
-                if (n.fixed) {
-                    n.x = xW(n.x);
-                    n.y = yH(n.y);
-                    if (bh.setting.createNearParent && bh.getCreateNearParent()(d, n)) {
-                         n.x = p.x;
-                         n.y = p.y;
-                    }
-                    n.paths = [{x: n.x, y: n.y}];
-
-                    if (bh.setting.increaseChildWhenCreated) {
-                        n.correctSize = n.size;
-                        n.size *= 3;
-                    }
-                }
-                else {
-                    n.size = n.hasOwnProperty("correctSize") ? n.correctSize : n.size;
-                    delete n["correctSize"];
-                }
-
-                n.size += 1;
-                n.fixed = false;
-
-                n.parent = p;
-
-                n.visible = bh.getVisibleByStep()(d, n);
-                fn = parser.setting.getChildKey()(n.nodeValue);
-
-                n.flash = 100;
-                n.opacity = 100;
-                n.alive = bh.setting.childLife > 0 ? bh.setting.childLife : 1;
-
-                if (n.visible) {
-                    n.category.now.indexOf(fn) < 0
-                    && n.category.now.push(fn);
-                }
-                else {
-                    (fn = n.category.now.indexOf(fn)) > -1
-                    && n.category.now.splice(parseInt(fn), 1);
-
-                    n.flash *= .5;
-                    n.alive *= .2;
-                    n.opacity *= .5;
-                }
-
-                var key = parser.setting.getParentKey()(p.nodeValue) + "_" + fn
-                    ;
-
-                if (links && !links.has(key))
-                    links.set(key, {
-                        key : key,
-                        source : p,
-                        target : n
-                    });
-            }
-
-            //TODO: updateLegend(/*d.sha*/);
-
-            forceChild.nodes(nodes.filter(filterChild)).start();
-
-            forceParent.nodes(nodes.filter(filterParent)).start();
-        });
 
         function zooming() {
             lastEvent.translate = d3.event.translate.slice(0);
@@ -1333,7 +1386,7 @@
                 l = Math.sqrt(x * x + y * y);
                 r = render.onGetNodeRadius()(d) / 2 +
                     (render.onGetNodeRadius()(node) +
-                    bh.setting.padding);
+                        bh.setting.padding);
                 if (l != r) {
                     l = (l - r) / (l || 1) * (alpha || 1);
                     x *= l;
@@ -1352,7 +1405,7 @@
             d.flash = (d.flash -= bh.setting.rateFlash) > 0 ? d.flash : 0;
 
             !d.flash && aliveCheck
-                && (d.alive = (d.alive-- > 0 ? d.alive : 0))
+            && (d.alive = (d.alive-- > 0 ? d.alive : 0))
             ;
 
             d.opacity = !d.alive
@@ -1361,7 +1414,11 @@
             ;
 
             d.visible && !d.opacity
-                && (d.visible = false);
+            && (d.visible = false);
+        }
+
+        function filterVisible(d) {
+            return checkVisible(d) && (d.visible || d.alive);
         }
 
         function filterChild(d) {
@@ -1372,30 +1429,115 @@
             return d.type == typeNode.parent && (d.visible || d.opacity);
         }
 
-        // initialize events methods
-        [
-            'onFinished',
-            'onStarting',
-            'onStarted'
-        ].forEach(function(key) {
-            bh[key] = func(bh, key);
+        render.onGetChildNodes(function() { return forceChild ? forceChild.nodes().filter(filterVisible) : []; });
+        render.onGetParentNodes(function() { return forceParent ? forceParent.nodes().filter(filterVisible) : []; });
+        render.onGetLinks(function() { return links ? links.values() : []; });
+        render.onGetLastEvent(function() { return lastEvent; });
+        render.onGetNodeRadius(function(d) {
+            return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
         });
 
-        function doFunc(key) {
-            return getFun(bh, key);
-        }
+        //TODO: processor.onProcessing();
+        //TODO: processor.onProcessed();
 
-        function doStating() {
-            return doFunc('onStarting')();
-        }
+        processor.onRecalc(function reCalc(d) {
+            if (!processor.IsRun())
+                return;
 
-        function doStarted() {
-            return doFunc('onStarted')();
-        }
+            //TODO: lCom.showCommitMessage(d.message);
+            //TODO: appendExtLegend(d.sha);
 
-        function doFinished() {
-            return doFunc('onFinished')();
-        }
+            var l = d.nodes.length,
+                n, p, fn;
+
+            p = d.parentNode;
+            p.fixed = p.permanentFixed || (p == selected);
+
+            if (!l)
+                console.log(d);
+            else {
+                p.alive = bh.setting.parentLife > 0 ? bh.setting.parentLife : 1;
+                p.opacity = 100;
+                p.flash = 100;
+                p.visible = true;
+            }
+
+            while(--l > -1) {
+                n = d.nodes[l];
+
+                if (n.fixed) {
+                    n.x = xW(n.x);
+                    n.y = yH(n.y);
+                    if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
+                         n.x = p.x;
+                         n.y = p.y;
+                    }
+                    n.paths = [{x: n.x, y: n.y}];
+
+                    if (bh.setting.increaseChildWhenCreated) {
+                        n.correctSize = n.size;
+                        n.size *= 3;
+                    }
+                }
+                else {
+                    n.size = n.hasOwnProperty("correctSize") ? n.correctSize : n.size;
+                    delete n["correctSize"];
+                }
+
+                n.size += 1;
+                n.fixed = n == selected;
+
+                n.parent = p;
+
+                n.visible = attachGetVisibleByStep()(d, n);
+                fn = parser.setting.getChildKey()(n.nodeValue);
+
+                n.flash = 100;
+                n.opacity = 100;
+                n.alive = bh.setting.childLife > 0 ? bh.setting.childLife : 1;
+
+                if (n.visible) {
+                    n.category.now.indexOf(fn) < 0
+                    && n.category.now.push(fn);
+                }
+                else {
+                    (fn = n.category.now.indexOf(fn)) > -1
+                    && n.category.now.splice(parseInt(fn), 1);
+
+                    n.flash *= .5;
+                    n.alive *= .2;
+                    n.opacity *= .5;
+                }
+
+                var key = parser.setting.getParentKey()(p.nodeValue) + "_" + fn
+                    ;
+
+                if (links && !links.has(key))
+                    links.set(key, {
+                        key : key,
+                        source : p,
+                        target : n
+                    });
+            }
+
+            //TODO: updateLegend(/*d.sha*/);
+
+            forceChild.nodes(nodes.filter(filterChild)).start();
+
+            forceParent.nodes(nodes.filter(filterParent)).start();
+        });
+
+        processor.onFinished(function() {
+            doFinished();
+        });
+
+        processor.onStarted(function() {
+            restart = false;
+            render.reset();
+            if (!rqId)
+                doRender();
+            doStarted();
+        });
 
         function doRender() {
             rqId = requestAnimationFrame(doRender, undefined);
@@ -1414,25 +1556,63 @@
 
             d3.select(canvas).style("background", "#000");
 
-            var cnvs = render.draw();
-
-            ctx.drawImage(cnvs, 0, 0);
+            ctx.drawImage(render.draw(), 0, 0);
             ctx.restore();
 
             valid = false;
         }
 
-        processor.onFinished(function() {
-            doFinished();
-        });
+        function contain(d, pos) {
+            var px = (lastEvent.translate[0] - pos[0]) / lastEvent.scale
+                , py = (lastEvent.translate[1] - pos[1]) / lastEvent.scale
+                , r = Math.sqrt( Math.pow( d.x + px , 2) +
+                    Math.pow( d.y + py , 2 ) )
+                , dr = render.onGetNodeRadius()(d)
+                ;
 
-        processor.onStarted(function() {
-            restart = false;
-            render.reset();
-            if (!rqId)
-                doRender();
-            doStarted();
-        });
+            return r < (dr * (d.type == typeNode.parent ? 1.5 : 1));
+        }
+
+        function getNodeFromPos(pos) {
+            for (var i = nodes.length - 1; i >= 0; i--) {
+                var d = nodes[i];
+                if (!d.fixed && d.opacity && contain(d, pos))
+                    return d;
+            }
+            return null;
+        }
+
+        function moveMouse(d) {
+            var item = arguments.length > 1 && arguments[1] instanceof HTMLCanvasElement ? arguments[1] : this;
+            d = null;
+            if (selected) {
+                var od = selected;
+                if (contain(od, d3.mouse(item)))
+                    d = od;
+                if (!d) {
+                    doMouseOutNode(od, d3.event);
+                    if (od)
+                        od.type == typeNode.child
+                        ? (od.fixed &= 3)
+                        : (od.permanentFixed || (od.fixed &= 3));
+                    selected = null;
+                    d3.select(parentNode).style("cursor", "default");
+                }
+            }
+            else
+                d = getNodeFromPos(d3.mouse(item));
+
+            if (d) {
+                selected = d;
+                d.fixed |= 4;
+                d3.select(parentNode).style("cursor", "pointer");
+                doMouseOverNode(d, d3.event);
+            }
+            doMouseMove(d, d3.event);
+            //todo showToolTip(d, d3.event);
+            //todo moveToolTip(d, d3.event);
+            //todo updateLegend();
+        }
 
         /**
          * Running dynamic visualization
@@ -1440,7 +1620,7 @@
          * @param {Number} width
          * @param {Number} height
          */
-        bh.runShow = function(inData, width, height) {
+        bh.start = function(inData, width, height) {
             restart = true;
             processor.killWorker();
 
@@ -1456,10 +1636,7 @@
 
             doStating();
 
-            incData = inData.sort(function(b, a) {
-                var fn = parser.setting.getGroupBy();
-                return d3.ascending(fn(a), fn(b));
-            });
+            incData = inData.sort(bh.sort());
 
             nodes = parser.nodes(incData);
 
@@ -1494,27 +1671,16 @@
                 .attr("width", w)
                 .attr("height", h)
                 .attr("id", "canvas_bh_" + idLayer)
+                .style({
+                    position: "absolute",
+                    top: 0,
+                    left: 0
+                })
                 .call(zoom)
+                .on('mousemove.tooltip', moveMouse)
                 .node();
 
             ctx = canvas.getContext("2d");
-
-            layer = layer.append("svg")
-                .attr("width", w)
-                .attr("height", h)
-                .attr("id", "svg_bh_" + idLayer)
-            ;
-
-            layer.append("g")
-                .call(zoom)
-                //TODO: .on('mousemove.tooltip', movem)
-                .append("rect")
-                .attr("width", w)
-                .attr("height", h)
-                .attr("x", 0)
-                .attr("y", 0)
-                .style("fill", "#ffffff")
-                .style("fill-opacity", 0);
 
             forceChild = (forceChild || d3.layout.force()
                 .stop()
@@ -1533,12 +1699,8 @@
             forceParent = (forceParent || d3.layout.force()
                 .stop()
                 .size([w, h])
-                .gravity(render.setting.padding * .001)
-                .charge(function(d) {
-                    return -(render.setting.padding + d.size) * 8
-                        //* (Math.sqrt(d.links / lastEvent.scale) || 1)
-                        ;
-                }))
+                .gravity(bh.setting.padding * .001)
+                .charge(function(d) { return -(bh.setting.padding + d.size) * 8; }))
                 .nodes([])
             ;
 

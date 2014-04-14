@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>BlackHole.js</title>
+    <meta charset="utf-8">
     <style>
         .console {
             top: 0;
@@ -22,6 +23,7 @@
         #canvas-svg {
             width: 700px;
             height: 700px;
+            position: relative;
         }
     </style>
 </head>
@@ -31,6 +33,7 @@
             <ul id="bh-setting"></ul>
         </li>
     </ul>
+    <div><span id="status"></span></div>
     <div id="canvas-svg"></div>
     <br/>
     <br/>
@@ -67,37 +70,58 @@
             })();
 
             bh.stop();
-            bh.runShow(data, 0, 0);
+            cur = 0;
+            all = data.length;
+            bh.start(data, 0, 0);
         }
 
-        var bh = d3.blackHole("#canvas-svg");
+        var uiStatus = d3.select("#status")
+            , bh = d3.blackHole("#canvas-svg")
+            , all
+            , cur
+            ;
 
-        bh.parser
-                .getGroupBy(function(d) { return d.date; })
-                .getParent(function(d) {return d.author;})
-                .getParentKey(function(d) {return d;})
-                .getChildKey(function(d) {return d.filename;})
-                .getCategory(function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); })
-        ;
+        function prints(items, l, r) {
+            cur += items ? items.length : 0;
+            uiStatus.text([
+                "items:",
+                cur * all * .001,
+                "% from:",
+                new Date(l).toDateString(),
+                " to:",
+                new Date(r).toDateString()
+            ].join(''));
+        }
 
-        bh.render
-                .onGetParentLabel(function(d) {return d.nodeValue;})
-                .onGetChildLabel(function(d) {return d.nodeValue.filename.replace(/.*\/(.*)$/, "$1");})
-        ;
+        function printm() {
+            console.log("m", [].slice.call(arguments));
+        }
 
         var stepDate = 24 * 60 * 60 * 1000;
-        bh.processor
-                .onCheckSkipping(function(){ return true; })
-                .onCalcRightBound(function(l) {
-                    return l + stepDate;
-                })
+        bh.on('getGroupBy', function(d) { return d.date; })
+            .on('getParent', function(d) {return d.author;})
+            .on('getParentKey', function(d) {return d;})
+            .on('getChildKey', function(d) {return d.filename;})
+            .on('getCategory', function(d) {return d.filename.replace(/.*?\.(.*)$/, '.$1'); })
+            .on('getParentLabel', function(d) {return d.nodeValue; })
+            .on('getChildLabel', function(d) {return d.nodeValue.filename.replace(/.*\/(.*)$/, "$1"); })
+            .on('calcRightBound', function(l) { return l + stepDate; })
+            .on('getVisibleByStep', function(d) { return !(d.action == "D"); })
+            .on('getCreateNearParent', function(d) {return d.action == "A";})
+            .on('finished', function() { uiStatus.text("Completed!!!"); })
+            .on('starting', function() {
+                    uiStatus.text("Start...");
+            })
+            .on('started', function() { uiStatus.text("Run..."); })
+            .on('processing', prints)
+            //.on('processed', prints)
+            .on('mouseovernode', printm)
+            .on('mouseoutnode', printm)
+            .on('mousemove', printm)
+            .sort(function(a, b) {
+                return d3.ascending(a.date + '_' + a.actOrder, b.date + '_' + b.actOrder);
+            })
         ;
-
-        bh.getVisibleByStep(function(d, n) {
-            return !(d.action == "D");
-        }).getCreateNearParent(function(d, n) {return d.action == "A";})
-        ;
-
 
         function chch(d) {
             bh.setting[d] = this.checked;
