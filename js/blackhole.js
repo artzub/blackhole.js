@@ -1648,8 +1648,6 @@
             ctx.save();
             ctx.clearRect(0, 0, bh.size()[0], bh.size()[1]);
 
-            d3.select(canvas).style("background", "#000");
-
             ctx.drawImage(render.draw(), 0, 0);
             ctx.restore();
 
@@ -1775,6 +1773,8 @@
                 .on('mousemove.tooltip', moveMouse)
                 .node();
 
+            applyStyleWhenStart();
+
             ctx = canvas.getContext("2d");
 
             forceChild = (forceChild || d3.layout.force()
@@ -1804,6 +1804,33 @@
             forceChild.start();
             forceParent.start();
         };
+
+        var hashStyle = document.createElement('canvas');
+        bh.style = function(name, value, priority) {
+            var n = arguments.length;
+
+            var target = [hashStyle];
+            if (canvas && processor.IsRun())
+                target.push(canvas);
+
+            target = d3.selectAll(target);
+
+            if (n < 3) {
+                if (typeof name !== "string") {
+                    target.style(name, value, priority);
+                    return bh;
+                }
+                if (n < 2)
+                    return d3.select(hashStyle).style(name, value, priority);
+            }
+            target.style(name, value, priority);
+
+            return bh;
+        };
+
+        function applyStyleWhenStart() {
+            d3.select(canvas).attr("style", d3.select(hashStyle).attr("style"));
+        }
 
         return bh;
     };
