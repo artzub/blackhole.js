@@ -1764,16 +1764,17 @@
                 .attr("width", w)
                 .attr("height", h)
                 .attr("id", "canvas_bh_" + idLayer)
-                .style({
-                    position: "absolute",
-                    top: 0,
-                    left: 0
-                })
                 .call(zoom)
                 .on('mousemove.tooltip', moveMouse)
                 .node();
 
             applyStyleWhenStart();
+
+            bh.style({
+                position: "absolute",
+                top: 0,
+                left: 0
+            });
 
             ctx = canvas.getContext("2d");
 
