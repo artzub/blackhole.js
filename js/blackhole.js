@@ -1768,13 +1768,13 @@
                 .on('mousemove.tooltip', moveMouse)
                 .node();
 
-            applyStyleWhenStart();
-
             bh.style({
                 position: "absolute",
                 top: 0,
                 left: 0
             });
+
+            applyStyleWhenStart();
 
             ctx = canvas.getContext("2d");
 
@@ -1810,19 +1810,18 @@
         bh.style = function(name, value, priority) {
             var n = arguments.length;
 
-            var target = [hashStyle];
+            var target = d3.selectAll([hashStyle]);
             if (canvas && processor.IsRun())
-                target.push(canvas);
-
-            target = d3.selectAll(target);
+                target = d3.selectAll([hashStyle, canvas]);
 
             if (n < 3) {
                 if (typeof name !== "string") {
-                    target.style(name, value, priority);
+                    target.style(name);
                     return bh;
                 }
                 if (n < 2)
-                    return d3.select(hashStyle).style(name, value, priority);
+                    return d3.select(hashStyle).style(name);
+                priority = "";
             }
             target.style(name, value, priority);
 
