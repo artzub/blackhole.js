@@ -700,8 +700,12 @@
 
             trackCtx.save();
 
-            trackCtx.fillStyle = "rgba(0, 0, 0, .15)";
+            trackCtx.globalCompositeOperation = "destination-out";
+
+            trackCtx.fillStyle = "rgba(0, 0, 0, .2)";
             trackCtx.fillRect(0, 0, render.size[0], render.size[1]);
+
+            trackCtx.globalCompositeOperation = 'source-over';
 
             trackCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
             trackCtx.scale(lastEvent.scale, lastEvent.scale);
@@ -727,12 +731,8 @@
                 var rs = d.paths.slice(0).reverse()
                     , p;
 
-                /*d.pathLife = (d.pathLife || 0);
-                if (d.pathLife++ > 0) {
-                    d.pathLife = 0;*/
-                    if (d.paths.length > render.setting.lengthTrack)
-                        d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
-                //}
+                if (d.paths.length > render.setting.lengthTrack)
+                    d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
 
                 trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
                 for (p in rs) {
@@ -1040,6 +1040,23 @@
             return bufCanvas;
         };
 
+
+        render.resize = function(arg) {
+            if(!arguments.length)
+                return render.size;
+            render.size = arg;
+
+            if (bufCanvas) {
+                bufCanvas.width = arg[0];
+                bufCanvas.height = arg[1];
+            }
+
+            if (trackCanvas) {
+                trackCanvas.width = arg[0];
+                trackCanvas.height = arg[1];
+            }
+        };
+
         /**
          * Initialization default images
          */
@@ -1147,6 +1164,11 @@
                     , blendingLighter : false // blending mode for canvas
                     , increaseChildWhenCreated : false // when a child is created his size will be increased
                     , createNearParent : false
+                    , zoomAndDrag : true // enable zooming and padding
+                    , zoom : null // function d3.zoom
+                    , scale : 1 // initial scale
+                    , translate : [0, 0] // initial translate
+                    , scaleExtent : [.1, 8]
 
                     //, showCountExt : true // show table of file's extension
                     //, onlyShownExt : true // show only extension which is shown
@@ -1156,7 +1178,10 @@
                 }
             }
             , hashOnAction = {}
-            , lastEvent
+            , lastEvent = {
+                translate: [0, 0],
+                scale : 1
+            }
             , selected
             , nodes
             , links
@@ -1251,7 +1276,7 @@
             key = key.toLowerCase();
             if (arguments.length < 2)
                 return isFun(hashOnAction[key]) ? hashOnAction[key]() : undefined;
-            hashOnAction[key](value);
+            isFun(hashOnAction[key]) && hashOnAction[key](value);
             return bh;
         };
 
@@ -1375,7 +1400,26 @@
         bh.size = function(arg) {
             if (!arguments.length)
                 return parser.size;
-            render.size = parser.size = arg;
+            render.resize(parser.size = arg);
+
+            if (canvas) {
+                canvas.width = arg[0];
+                canvas.height = arg[1];
+            }
+
+            xW && (xW = d3.scale.linear()
+                .range([0, arg[0]])
+                .domain([0, arg[0]]));
+
+            yH && (yH = d3.scale.linear()
+                .range([0, arg[1]])
+                .domain([0, arg[1]]));
+
+            updateWHScale();
+
+            forceChild && forceChild.size(arg);
+            forceParent && forceParent.size(arg);
+
             return bh;
         };
 
@@ -1403,20 +1447,48 @@
                 );
         }
 
+        function updateWHScale() {
+            if(!lastEvent)
+                return;
+
+            var tl = lastEvent.translate[0] / lastEvent.scale
+                , tt = lastEvent.translate[1] / lastEvent.scale
+                , size = bh.size()
+                ;
+
+            xW && xW.range([-tl, -tl + size[0] / lastEvent.scale])
+                .domain([0, size[0]]);
+            yH && yH.range([-tt, -tt + size[1] / lastEvent.scale])
+                .domain([0, size[1]]);
+            valid = false;
+        }
+
         function zooming() {
+
+            if (!bh.setting.zoomAndDrag)
+                return;
+
             lastEvent.translate = d3.event.translate.slice(0);
             lastEvent.scale = d3.event.scale;
 
-            var tl = lastEvent.translate[0] / lastEvent.scale,
-                tt = lastEvent.translate[1] / lastEvent.scale;
-
-            xW.range([-tl, -tl + bh.size()[0] / lastEvent.scale])
-                .domain([0, bh.size()[0]]);
-            yH.range([-tt, -tt + bh.size()[1] / lastEvent.scale])
-                .domain([0, bh.size()[1]]);
-
-            valid = false;
+            updateWHScale();
         }
+
+        bh.translate = function(point) {
+            if (!arguments.length || !(point instanceof Array))
+                return lastEvent.translate;
+            lastEvent.translate = point.slice(0);
+            updateWHScale();
+            return bh;
+        };
+
+        bh.scale = function(s) {
+            if (!arguments.length)
+                return lastEvent.scale;
+            lastEvent.scale = s;
+            updateWHScale();
+            return bh;
+        };
 
         function tick() {
             if (forceChild.nodes()) {
@@ -1719,7 +1791,7 @@
             if (!(inData || []).length)
                 return;
 
-            layer = d3.select(parentNode);
+            layer = parentNode.selectAll ? parentNode : d3.select(parentNode);
 
             var w = width || layer.node().clientWidth;
             var h = height || layer.node().clientHeight;
@@ -1738,8 +1810,8 @@
             layer.selectAll("*").remove();
 
             lastEvent = {
-                translate: [0, 0],
-                scale : 1
+                translate: bh.setting.translate instanceof Array ? bh.setting.translate : [0, 0],
+                scale : typeof bh.setting.scale !== "undefined" ? bh.setting.scale : 1
             };
 
             w = bh.size()[0];
@@ -1753,10 +1825,10 @@
                 .range([0, h])
                 .domain([0, h]);
 
-            zoom = zoom || d3.behavior.zoom()
-                .scaleExtent([.1, 8])
-                .scale(1)
-                .translate([0, 0])
+            zoom = bh.setting.zoom || d3.behavior.zoom()
+                .scaleExtent(bh.setting.scaleExtent instanceof Array ? bh.setting.scaleExtent : [.1, 8])
+                .scale(lastEvent.scale)
+                .translate(lastEvent.translate)
                 .on("zoom", zooming);
 
             canvas = layer.append("canvas")
@@ -1771,7 +1843,8 @@
             bh.style({
                 position: "absolute",
                 top: 0,
-                left: 0
+                left: 0,
+                transform: 'translate3d(0px, 0px, 0px)'
             });
 
             applyStyleWhenStart();
@@ -1804,6 +1877,7 @@
 
             forceChild.start();
             forceParent.start();
+            return bh;
         };
 
         var hashStyle = document.createElement('canvas');
@@ -1811,7 +1885,7 @@
             var n = arguments.length;
 
             var target = d3.selectAll([hashStyle]);
-            if (canvas && processor.IsRun())
+            if (canvas)
                 target = d3.selectAll([hashStyle, canvas]);
 
             if (n < 3) {

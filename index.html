@@ -122,6 +122,8 @@
                 return d3.ascending(a.date + '_' + a.actOrder, b.date + '_' + b.actOrder);
             })
         ;
+        bh.setting.drawTrack = true;
+        bh.style('background', "#000");
 
         function chch(d) {
             bh.setting[d] = this.checked;
