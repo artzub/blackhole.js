@@ -395,6 +395,7 @@
             killWorker : killWorker
             , boundRange : [0, 1]
             , onFinished : null
+            , onStopped : null
             , onStarted : null
             , onProcessing : null
             , onProcessed : null
@@ -435,8 +436,12 @@
             return getFun(processor.setting, "onCalcRightBound")(dl);
         }
 
-        function doFinished(dr) {
-            doFunc("onFinished")(dr);
+        function doFinished(dl, dr) {
+            doFunc("onFinished")(dl, dr);
+        }
+
+        function doStopped() {
+            doFunc("onStopped")();
         }
 
         function doStarted() {
@@ -488,7 +493,7 @@
                 try {
                     if (dl > processor.boundRange[1]) {
                         killWorker();
-                        doFinished(dl);
+                        doFinished(dl, dr);
                         throw new Error("break");
                     } else {
                         if (!visTurn.length && processor.setting.skipEmptyDate) {
@@ -526,6 +531,7 @@
         processor.stop = function() {
             stop = true;
             killWorker();
+            doStopped();
             return processor;
         };
 
@@ -1284,6 +1290,7 @@
             hashOnAction['calcrightbound'] = processor.setting.onCalcRightBound;
             hashOnAction['processing'] = processor.onProcessing;
             hashOnAction['processed'] = processor.onProcessed;
+            hashOnAction['stopped'] = processor.onStopped;
 
             hashOnAction['getchildlabel'] = render.setting.onGetChildLabel;
             hashOnAction['getparentlabel'] = render.setting.onGetParentLabel;
@@ -1381,8 +1388,8 @@
             return doFunc('started')();
         }
 
-        function doFinished() {
-            return doFunc('finished')();
+        function doFinished(dl, dr) {
+            return doFunc('finished')(dl, dr);
         }
 
         function doMouseOverNode() {
@@ -1638,7 +1645,7 @@
                          n.x = p.x;
                          n.y = p.y;
                     }
-                    n.paths = [{x: n.x, y: n.y}];
+                    n.paths = []; //[{x: n.x, y: n.y}];
 
                     if (bh.setting.increaseChildWhenCreated) {
                         n.correctSize = n.size;
@@ -1693,8 +1700,8 @@
             forceParent.nodes(nodes.filter(filterParent)).start();
         });
 
-        processor.onFinished(function() {
-            doFinished();
+        processor.onFinished(function(dl, dr) {
+            doFinished(dl, dr);
         });
 
         processor.onStarted(function() {
@@ -1760,7 +1767,7 @@
                         ? (od.fixed &= 3)
                         : (od.permanentFixed || (od.fixed &= 3));
                     selected = null;
-                    d3.select(parentNode).style("cursor", "default");
+                    layer.style("cursor", null);
                 }
             }
             else
@@ -1769,7 +1776,7 @@
             if (d) {
                 selected = d;
                 d.fixed |= 4;
-                d3.select(parentNode).style("cursor", "pointer");
+                layer && layer.style("cursor", "pointer");
                 doMouseOverNode(d, d3.event);
             }
             doMouseMove(d, d3.event);
