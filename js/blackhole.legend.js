@@ -2,11 +2,16 @@
  * Created by artzub on 26.04.2014.
  */
 
+"use strict";
+
 !function() {
-    d3.blackHole = d3.blackHole || function() {};
+    d3.blackHole = d3.blackHole || {};
+
     d3.blackHole.legend = function(node, w, h, cats) {
 
-        var that = {parentNode : node || document.body}
+        var that = {parentNode : node || document.body, setting : {
+                lengthOfCropName : 55
+            }}
             , categories
             , layer
             , lLeg
@@ -15,6 +20,8 @@
             , utils = d3.blackHole.utils
             , selected
             , colorless = d3.rgb('gray')
+            , mt = 5
+            , ml = 5
             ;
 
         that.on = function(key, value) {
@@ -68,7 +75,7 @@
 
             var node = that.parentNode = that.parentNode.selectAll ? that.parentNode : d3.select(that.parentNode);
 
-            layer = layer || node.append(svg);
+            layer = layer || node.append('svg');
             size[0] = size[0] || node.node().clientWidth;
             size[1] = size[1] || node.node().clientHeight;
             layer.attr({
@@ -76,10 +83,8 @@
                 height : size[1]
             });
 
-            var mt = 48
-                , ml = 5
-                , h2 = size[1] / 2 - mt
-                , w3 = size[0] / 3
+            var h2 = size[1] - mt
+                , w3 = size[0]
                 ;
 
             lLeg = (lLeg || layer.append("g"))
@@ -89,6 +94,9 @@
             ;
 
             lLeg.selectAll("*").remove();
+
+            if (!categories)
+                return;
 
             var g = lLeg.selectAll(".gLeg")
                 .data(categories.entries(), function(d) { return d.key; });
@@ -112,8 +120,13 @@
             g.append("text")
                 .attr("class", "gttLeg")
                 .style("font-size", "13px")
+                .text(function(d) {
+                    var l = that.setting.lengthOfCropName;
+                    return d.key.length > l ? d.key.substr(0, l).trim() + '...' : d.key;
+                })
+                .style("fill", function(d) { return d3.rgb(d.value.color).brighter(); })
+                .append('title')
                 .text(function(d) { return d.key; })
-                .style("fill", function(d) { return d3.rgb(d.value.color).brighter().brighter(); })
             ;
 
             g.append("text")
@@ -187,7 +200,38 @@
             return that;
         };
 
+        that.size = function(x, y) {
+            switch (arguments.length) {
+                case 0: return size;
+                case 1:
+                    if (x instanceof Array)
+                        size = x;
+                    else
+                        size = [x, x];
+                    break;
+                default :
+                    if (x instanceof Array)
+                        size = x;
+                    else
+                        size = [x, y];
+                    break;
+            }
+            var h2 = size[1] - mt
+                , w3 = size[0]
+                ;
+
+            lLeg && lLeg
+                .attr("width", w3)
+                .attr("height", h2)
+                .attr("transform", "translate(" + [ml, mt] + ")")
+            ;
+
+            that.update();
+            return that;
+        };
+
         that.categories(cats);
+
         return that;
-    }
+    };
 }();

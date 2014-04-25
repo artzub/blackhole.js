@@ -447,6 +447,12 @@
             y = h * Math.random();
         }
 
+        parser.refreshCategories = function() {
+            parser.categoryHash.forEach(function(key, value) {
+                value.now.splice(0);
+            });
+        }
+
         return parser;
     }
 
@@ -1285,11 +1291,17 @@
             ;
 
         bh.selectNode = function(node) {
+            if (!arguments.length)
+                return userSelected || selected;
             userSelected = node;
+            return bh;
         };
 
         bh.selectCategory = function(category) {
+            if (!arguments.length)
+                return selectedCategory;
             selectedCategory = category;
+            return bh;
         };
 
         bh.parents = function(arg) {
@@ -1681,6 +1693,7 @@
         }
 
         function filterVisible(d) {
+            !d.visible && d.type == typeNode.child && (d.paths = []);
             return checkVisible(d) && (d.visible || d.alive);
         }
 
@@ -1718,7 +1731,6 @@
                 return;
 
             //TODO: lCom.showCommitMessage(d.message);
-            //TODO: appendExtLegend(d.sha);
 
             var l = d.nodes.length,
                 n, p, fn;
@@ -1793,8 +1805,6 @@
                     });
             }
 
-            //TODO: updateLegend(/*d.sha*/);
-
             forceChild && forceChild.nodes(nodes.filter(filterChild)).start();
 
             forceParent && forceParent.nodes(nodes.filter(filterParent)).start();
@@ -1816,7 +1826,6 @@
             rqId = requestAnimationFrame(doRender, undefined);
 
             //TODO: lHis && lHis.style("display", setting.showHistogram ? null : "none");
-            //TODO: lLeg && lLeg.style("display", setting.showCountExt ? null : "none");
 
             if (valid)
                 return;
@@ -1885,6 +1894,12 @@
             //todo updateLegend();
         }
 
+        function resortNodes(a, b) {
+            return a.type == typeNode.child && b.type == typeNode.child
+                ? d3.ascending(incData.indexOf(a.nodeValue), incData.indexOf(b.nodeValue))
+                : 1;
+        }
+
         /**
          * Running dynamic visualization
          * @param {Array} inData
@@ -1893,17 +1908,28 @@
          */
         bh.start = function(inData, width, height, reinitData, callback) {
             restart = true;
-
-            !reinitData && nodes && nodes.forEach(function(d) {
-                d.alive = 0;
-                d.flash = 0;
-                d.opacity = 0;
-                d.parent = null;
-                d.visible = false;
-                parser.setInitState(d);
-            });
-
             processor.killWorker();
+
+            if(!reinitData && nodes) {
+                nodes.sort(function(a, b) {
+                    a.alive = 0;
+                    a.flash = 0;
+                    a.opacity = 0;
+                    a.parent = null;
+                    a.visible = false;
+                    parser.setInitState(a);
+
+                    b.alive = 0;
+                    b.flash = 0;
+                    b.opacity = 0;
+                    b.parent = null;
+                    b.visible = false;
+                    parser.setInitState(b);
+
+                    return resortNodes(a, b);
+                });
+                parser.refreshCategories();
+            }
 
             if (!(inData || []).length)
                 return;
@@ -1922,6 +1948,8 @@
             forceParent && forceParent.nodes([]).stop();
 
             if (!incData || !nodes || reinitData) {
+                nodes && nodes.splice(0);
+
                 var sort = bh.sort();
                 incData = isFun(sort) ? inData.sort(sort) : inData;
 
@@ -2044,8 +2072,8 @@
     };
 
     d3.blackHole.utils = {
-        isFun : isFun
-        fun : func,
+        isFun : isFun,
+        func : func,
         getFun : getFun,
         emptyFun : emptyFun
     };
