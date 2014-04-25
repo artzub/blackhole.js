@@ -8,12 +8,21 @@
 
 (function() {
     /**
+     * Check that input parameter is a function
+     * @param a
+     * @returns {boolean}
+     */
+    function isFun(a) {
+        return typeof a === "function";
+    }
+
+    /**
      * Asynchronous forEach
      * @param {Array} items
      * @param {Function} fn
      * @param {Number} time
      */
-    function asyncForEach(items, fn, time) {
+    function asyncForEach(items, fn, time, finishCallback) {
         if (!(items instanceof Array))
             return;
 
@@ -24,16 +33,20 @@
                 fn(workArr.shift(), workArr);
                 setTimeout(loop, time || 10);
             }
+            else if (isFun(finishCallback)) {
+                finishCallback();
+            }
         })();
     }
 
     /**
-     * Check that input parameter is a function
-     * @param a
+     * true if colors aren't same
+     * @param a {d3.rgb}
+     * @param b {d3.rgb}
      * @returns {boolean}
      */
-    function isFun(a) {
-        return typeof a === "function";
+    function compereColor(a, b) {
+        return a.r != b.r || a.g != b.g || a.b != b.b;
     }
 
     /**
@@ -111,6 +124,10 @@
                     getParentPosition : null,
                     getParentFixed : null,
 
+                    onBeforeParsing : null,
+                    onParsing : null,
+                    onAfterParsing : null,
+
                     parentColor: d3.scale.category20b(),
                     childColor: d3.scale.category20()
                 }
@@ -127,7 +144,7 @@
          */
         (function() {
 
-            var reg = new RegExp("^get");
+            var reg = new RegExp("^[get|on]");
             d3.map(parser.setting).keys().forEach(function(key) {
                 if (reg.test(key))
                     parser.setting[key] = func(parser.setting, key);
@@ -185,6 +202,22 @@
                 return false;
             });
         })();
+
+        function doFunc(key) {
+            return getFun(parser.setting, key);
+        }
+
+        function doBeforeParsing(data) {
+            return doFunc("onBeforeParsing")(data);
+        }
+
+        function doParsing(item) {
+            return doFunc("onParsing")(item);
+        }
+
+        function doAfterParsing(item) {
+            return doFunc("onAfterParsing")(item);
+        }
 
         /**
          * Create a Category
@@ -272,7 +305,7 @@
             return {
                 x : x,
                 y : y,
-                id : type + parser.setting.getKey()(d, type),
+                id : type + "_" + parser.setting.getKey()(d, type),
                 size : !isChild ? parser.setting.getParentRadius()(d) : parser.setting.getChildRadius()(d),
                 fixed : true,
                 permanentFixed : !isChild ? parser.setting.getParentFixed()(d) : false,
@@ -331,13 +364,8 @@
             return n;
         }
 
-        parser.nodes = function(data) {
+        parser.nodes = function(data, callback) {
             var ns = []
-                , i
-                , j
-                , n
-                , d
-                , groupBy
                 ;
 
             parser.parentHash = d3.map({});
@@ -345,37 +373,79 @@
             parser.categoryHash = d3.map({});
             parser.categoryMax = 0;
 
+            doBeforeParsing(data);
+
+            if (isFun(callback)) {
+                asyncForEach(data, function (d, arr) {
+                    parseNode(d, ns);
+                }, 10, function() {
+                    doAfterParsing(ns);
+                    callback(ns);
+                })
+            }
+            else {
+                parse(data, ns);
+                return ns;
+            }
+        };
+
+        function parse(inData, outData) {
             if (data) {
-                i = data.length;
+                var i = data.length;
                 while(--i > -1) {
                     d = data[i];
-                    if (!d) continue;
-
-                    d.nodes = [];
-
-                    n = getParent(d);
-                    d.parentNode = n;
-                    !n.inserted && (n.inserted = ns.push(n));
-
-                    groupBy = parser.setting.getGroupBy()(d);
-
-                    n = getChild(d);
-
-                    d.nodes.push(n);
-                    n.category.currents[groupBy] = (n.category.currents[groupBy] || 0);
-                    n.category.currents[groupBy]++;
-                    n.category.values['_' + n.id] = parser.setting.getValue()(d);
-                    !n.inserted && (n.inserted = ns.push(n));
-
-                    j = parser.categoryHash.values().reduce((function(id) { return function(a, b) {
-                        return (a || 0) + (b.currents[id] || 0);
-                    }})(groupBy), null);
-
-                    parser.categoryMax = j > parser.categoryMax ? j : parser.categoryMax;
+                    parseNode(d, outData);
                 }
+                doAfterParsing(outData);
             }
-            return ns;
-        };
+        }
+
+        function parseNode(d, ns) {
+            var j
+                , n
+                , d
+                , groupBy
+                ;
+
+
+            if (!d || !ns || !(ns instanceof Array))
+                return;
+
+            d.nodes = [];
+
+            n = getParent(d);
+            d.parentNode = n;
+            !n.inserted && (n.inserted = ns.push(n));
+
+            groupBy = parser.setting.getGroupBy()(d);
+
+            n = getChild(d);
+
+            d.nodes.push(n);
+            n.category.currents[groupBy] = (n.category.currents[groupBy] || 0);
+            n.category.currents[groupBy]++;
+            n.category.values['_' + n.id] = parser.setting.getValue()(d);
+            !n.inserted && (n.inserted = ns.push(n));
+
+            j = parser.categoryHash.values().reduce((function(id) { return function(a, b) {
+                return (a || 0) + (b.currents[id] || 0);
+            }})(groupBy), null);
+
+            parser.categoryMax = j > parser.categoryMax ? j : parser.categoryMax;
+
+            doParsing(n);
+        }
+
+        parser.setInitState = function(node) {
+            var w = parser.size[0]
+                , h = parser.size[1]
+                , x
+                , y
+                ;
+
+            x = w * Math.random();
+            y = h * Math.random();
+        }
 
         return parser;
     }
@@ -672,10 +742,6 @@
                 (bufCtx.font = "normal normal " + fontSize + "px Tahoma");
         }
 
-        function compereColor(a, b) {
-            return a.r != b.r || a.g != b.g || a.b != b.b;
-        }
-
         function sortByColor(a, b) {
             return d3.ascending(b.color + !b.flash, a.color + !a.flash);
         }
@@ -735,7 +801,11 @@
                 trackCtx.beginPath();
 
                 var rs = d.paths.slice(0).reverse()
-                    , p;
+                    , p
+                    ;
+
+                if (!d.flash && d.paths.length < render.setting.lengthTrack)
+                    d.paths = [];
 
                 if (d.paths.length > render.setting.lengthTrack)
                     d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
@@ -812,7 +882,7 @@
                     bufCtx.globalAlpha = i * .01;
                 }
 
-                linksCtx.lineWidth = getNodeRadius(base) || 1;
+                linksCtx.lineWidth = 1;//getNodeRadius(base) || 1;
                 linksCtx.beginPath();
 
                 var sx = child ? d.target.x : d.source.x,
@@ -1162,7 +1232,8 @@
                 , resume : processor.resume
 
                 , setting : {
-                    childLife : 255 // number of steps of life a file
+                    alpha : 0.025
+                    , childLife : 255 // number of steps of life a file
                     , parentLife : 255 // number of steps of life a user
                     , edgeLife : 255 // number of steps of life a edge
                     , rateOpacity : .5 // rate of decrease of opacity
@@ -1189,6 +1260,8 @@
                 scale : 1
             }
             , selected
+            , userSelected
+            , selectedCategory
             , nodes
             , links
             , incData
@@ -1206,7 +1279,18 @@
             , zoomScale
             , forceChild
             , forceParent
+            , colorless = d3.rgb("gray")
+            , colorlessFlash = d3.rgb("lightgray")
+
             ;
+
+        bh.selectNode = function(node) {
+            userSelected = node;
+        };
+
+        bh.selectCategory = function(category) {
+            selectedCategory = category;
+        };
 
         bh.parents = function(arg) {
             if (!arguments.length)
@@ -1292,6 +1376,11 @@
             hashOnAction['processed'] = processor.onProcessed;
             hashOnAction['stopped'] = processor.onStopped;
 
+            hashOnAction['beforeparsing'] = parser.setting.onBeforeParsing;
+            hashOnAction['parsing'] = parser.setting.onParsing;
+            hashOnAction['afterparsing'] = parser.setting.onAfterParsing;
+
+
             hashOnAction['getchildlabel'] = render.setting.onGetChildLabel;
             hashOnAction['getparentlabel'] = render.setting.onGetParentLabel;
             hashOnAction['getselectedcolor'] = attachGetSelectedColor;
@@ -1312,12 +1401,10 @@
         bh.sort = function(arg) {
             if (!arguments.length)
                 return bh.sort.value;
-            if(!isFun(arg))
-                arg = defaultSort;
             bh.sort.value = arg;
             return bh;
         };
-        bh.sort(null);
+        bh.sort(defaultSort);
 
         function defaultFilter(l, r) {
             return incData.filter(function (d) {
@@ -1337,7 +1424,21 @@
 
 
         function defaultGetSelectedColor(d) {
-            return d.flash ? d.flashColor : d.d3color
+            var category = selectedCategory;
+
+            if (!category && selected) {
+                if (selected.type == typeNode.parent) {
+                    return parser.setting.getParent()(d.nodeValue) !== selected.nodeValue
+                        ? d.flash ? colorlessFlash : colorless
+                        : d.flash ? d.flashColor : d.d3color;
+                }
+                if (selected.category)
+                    category = selected.category;
+            }
+
+            return category && category.color && compereColor(category.color, d.d3color)
+                ? d.flash ? colorlessFlash : colorless
+                : d.flash ? d.flashColor : d.d3color;
         }
         function attachGetSelectedColor(arg) {
             if (!arguments.length)
@@ -1346,7 +1447,7 @@
                 arg = defaultGetSelectedColor;
             render.onGetSelectedColor(arg);
         }
-        bh.on('GetSelectedColor', defaultGetSelectedColor);
+        bh.on('getSelectedColor', defaultGetSelectedColor);
 
         function defaultGetVisibleByStep() {
             return true;
@@ -1358,7 +1459,7 @@
                 arg = defaultGetVisibleByStep;
             attachGetVisibleByStep.value = arg;
         }
-        bh.on('GetVisibleByStep', defaultGetVisibleByStep);
+        bh.on('getVisibleByStep', defaultGetVisibleByStep);
 
         function defaultGetCreateNearParent() {
             return false;
@@ -1370,7 +1471,7 @@
                 arg = defaultGetCreateNearParent;
             attachGetCreateNearParent.value = arg;
         }
-        bh.on('GetCreateNearParent', defaultGetCreateNearParent);
+        bh.on('getCreateNearParent', defaultGetCreateNearParent);
 
         ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode'].forEach(function(key) {
             hashOnAction[key] = func(hashOnAction, key);
@@ -1392,16 +1493,16 @@
             return doFunc('finished')(dl, dr);
         }
 
-        function doMouseOverNode() {
-            return doFunc('mouseovernode')();
+        function doMouseOverNode(d, e) {
+            return doFunc('mouseovernode')(d, e);
         }
 
-        function doMouseOutNode() {
-            return doFunc('mouseoutnode')();
+        function doMouseOutNode(d, e) {
+            return doFunc('mouseoutnode')(d, e);
         }
 
-        function doMouseMove() {
-            return doFunc('mousemove')();
+        function doMouseMove(d, e) {
+            return doFunc('mousemove')(d, e);
         }
 
         bh.size = function(arg) {
@@ -1451,7 +1552,7 @@
                 && d.x - d.size < -tx + offsetx[1] + bh.size()[0]/lastEvent.scale
                 && d.y + d.size > -ty + offsety[0]
                 && d.y - d.size < -ty + offsety[1] + bh.size()[1]/lastEvent.scale
-                );
+            );
         }
 
         function updateWHScale() {
@@ -1501,7 +1602,7 @@
             if (forceChild.nodes()) {
 
                 forceChild.nodes()
-                    .forEach(cluster(0.025));
+                    .forEach(cluster(bh.setting.alpha));
 
                 forceParent.nodes(
                     forceParent.nodes()
@@ -1576,7 +1677,7 @@
             ;
 
             d.visible && !d.opacity
-            && (d.visible = false);
+                && (d.visible = false);
         }
 
         function filterVisible(d) {
@@ -1584,28 +1685,27 @@
         }
 
         function filterChild(d) {
-            return d.type != typeNode.parent && (d.visible || d.opacity);
+            !d.visible && (d.paths = []);
+            return d.type !== typeNode.parent && (d.visible || d.opacity);
         }
 
         function filterParent(d) {
-            return d.type == typeNode.parent && (d.visible || d.opacity);
+            return d.type === typeNode.parent && (d.visible || d.opacity);
         }
 
-        render.onGetChildNodes(function() { return forceChild ? forceChild.nodes().filter(filterVisible) : []; });
-        render.onGetParentNodes(function() { return forceParent ? forceParent.nodes().filter(filterVisible) : []; });
+        render.onGetChildNodes(function() { return !restart && forceChild ? forceChild.nodes().filter(filterVisible) : []; });
+        render.onGetParentNodes(function() { return !restart && forceParent ? forceParent.nodes().filter(filterVisible) : []; });
         render.onGetLinks(function() {
             return links
                 ? links.values().filter(function(d) {
                     return d.source && d.target
-                        && filterVisible(d.source)
-                        && filterVisible(d.target)
                         && d.source.opacity
                         && d.target.opacity
                 })
                 : [];
         });
         render.onGetLastEvent(function() { return lastEvent; });
-        render.onGetSelectedNode(function() { return selected; });
+        render.onGetSelectedNode(function() { return selected || userSelected; });
         render.onGetNodeRadius(function(d) {
             return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
         });
@@ -1675,7 +1775,7 @@
                 }
                 else {
                     (fn = n.category.now.indexOf(fn)) > -1
-                    && n.category.now.splice(parseInt(fn), 1);
+                        && n.category.now.splice(parseInt(fn), 1);
 
                     n.flash *= .5;
                     n.alive *= .2;
@@ -1695,9 +1795,9 @@
 
             //TODO: updateLegend(/*d.sha*/);
 
-            forceChild.nodes(nodes.filter(filterChild)).start();
+            forceChild && forceChild.nodes(nodes.filter(filterChild)).start();
 
-            forceParent.nodes(nodes.filter(filterParent)).start();
+            forceParent && forceParent.nodes(nodes.filter(filterParent)).start();
         });
 
         processor.onFinished(function(dl, dr) {
@@ -1747,7 +1847,7 @@
         function getNodeFromPos(pos) {
             for (var i = nodes.length - 1; i >= 0; i--) {
                 var d = nodes[i];
-                if (!d.fixed && d.opacity && contain(d, pos))
+                if ((!d.fixed || d.permanentFixed) && d.opacity && contain(d, pos))
                     return d;
             }
             return null;
@@ -1791,8 +1891,18 @@
          * @param {Number} width
          * @param {Number} height
          */
-        bh.start = function(inData, width, height) {
+        bh.start = function(inData, width, height, reinitData, callback) {
             restart = true;
+
+            !reinitData && nodes && nodes.forEach(function(d) {
+                d.alive = 0;
+                d.flash = 0;
+                d.opacity = 0;
+                d.parent = null;
+                d.visible = false;
+                parser.setInitState(d);
+            });
+
             processor.killWorker();
 
             if (!(inData || []).length)
@@ -1807,11 +1917,27 @@
 
             doStating();
 
-            incData = inData.sort(bh.sort());
+            forceChild && forceChild.nodes([]).stop()
 
+            forceParent && forceParent.nodes([]).stop();
+
+            if (!incData || !nodes || reinitData) {
+                var sort = bh.sort();
+                incData = isFun(sort) ? inData.sort(sort) : inData;
+
+                parser.nodes(incData, function(newNodes) {
+                    nodes = newNodes;
+                    initCallback(w, h, callback);
+                });
+            }
+            else {
+                initCallback(w, h, callback);
+            }
+            return bh;
+        };
+
+        function initCallback(w, h, callback) {
             links = d3.map({});
-            nodes = parser.nodes(incData);
-
             processor.boundRange = d3.extent(incData.map(parser.setting.getGroupBy()));
 
             layer.selectAll("*").remove();
@@ -1863,7 +1989,7 @@
                 .size([w, h])
                 .friction(.75)
                 .gravity(0)
-                .charge(function(d) {return -1 * render.onGetNodeRadius()(d); })
+                .charge(function(d) {return -render.onGetNodeRadius()(d); })
                 .on("tick", tick))
                 .nodes([])
             ;
@@ -1881,11 +2007,12 @@
             ;
 
             processor.start();
+            bh.size([w, h]);
 
             forceChild.start();
             forceParent.start();
-            return bh;
-        };
+            isFun(callback) && callback(bh);
+        }
 
         var hashStyle = document.createElement('canvas');
         bh.style = function(name, value, priority) {
@@ -1914,6 +2041,13 @@
         }
 
         return bh;
+    };
+
+    d3.blackHole.utils = {
+        isFun : isFun
+        fun : func,
+        getFun : getFun,
+        emptyFun : emptyFun
     };
 
     /**
