@@ -9,9 +9,12 @@
 
     d3.blackHole.legend = function(node, w, h, cats) {
 
-        var that = {parentNode : node || document.body, setting : {
-                lengthOfCropName : 55
-            }}
+        var that = {
+                parentNode : node || document.body,
+                setting : {
+                    lengthOfCropName : 55
+                }
+            }
             , categories
             , layer
             , lLeg
@@ -34,18 +37,13 @@
             return that;
         };
 
-        !function() {
-            ['mouseover', 'mousemove', 'mouseout'].forEach(
-                function(d) {
-
-                }
-            );
-        }();
-
         ['mouseover', 'mousemove', 'mouseout'].forEach(function(key) {
             hashOnAction[key] = utils.func(hashOnAction, key);
         });
         function doFunc(key) {
+            if (!key || !(typeof key === 'string'))
+                return that;
+            key = key.toLowerCase();
             return utils.getFun(hashOnAction, key);
         }
 
@@ -121,12 +119,13 @@
                 .attr("class", "gttLeg")
                 .style("font-size", "13px")
                 .text(function(d) {
+                    var name = d.value ? d.value.name || d.key : d.key;
                     var l = that.setting.lengthOfCropName;
-                    return d.key.length > l ? d.key.substr(0, l).trim() + '...' : d.key;
+                    return name.length > l ? name.substr(0, l).trim() + '...' : name;
                 })
                 .style("fill", function(d) { return d3.rgb(d.value.color).brighter(); })
                 .append('title')
-                .text(function(d) { return d.key; })
+                .text(function(d) { return '[' + d.key + ']' + (d.value ? (d.value.name ? ' ' + d.value.name : '') :  ''); })
             ;
 
             g.append("text")

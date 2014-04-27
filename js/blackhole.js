@@ -6,7 +6,7 @@
 
 "use strict";
 
-(function() {
+d3.blackHole = (function() {
     /**
      * Check that input parameter is a function
      * @param a
@@ -111,7 +111,8 @@
                 , parentHash : null
                 , setting : {
                     getName : null,
-                    getCategory : null,
+                    getCategoryKey : null,
+                    getCategoryName : null,
                     getKey : null,
                     getChildKey : null,
                     getParentKey : null,
@@ -154,8 +155,12 @@
                 return d.name;
             });
 
-            parser.setting.getCategory(function(d) {
+            parser.setting.getCategoryKey(function(d) {
                 return d.category;
+            });
+
+            parser.setting.getCategoryName(function(d) {
+                return parser.setting.getCategoryKey()(d);
             });
 
             parser.setting.getKey(function(d, type) {
@@ -225,11 +230,12 @@
          * @returns {Object}
          * @constructor
          */
-        function Category(c) {
+        function Category(c, name) {
             var cat = parser.categoryHash.get(c);
             if (!cat) {
                 cat = {
                     key: c,
+                    name : name || c,
                     all: 0,
                     currents: {},
                     values: {},
@@ -251,7 +257,7 @@
         function Node(d, type) {
             var isChild = type == typeNode.child
                 , c = isChild
-                    ? parser.setting.getCategory()(d)
+                    ? parser.setting.getCategoryKey()(d)
                     : parser.setting.parentColor(parser.setting.getParentKey()(d))
                 , cat
                 , x
@@ -266,7 +272,7 @@
                 ;
 
             if (type == typeNode.child) {
-                cat = Category(c);
+                cat = Category(c, parser.setting.getCategoryName()(d));
                 cat.all++;
                 c = cat.color;
             }
@@ -478,8 +484,7 @@
             , onRecalc : null
             , onFilter : null
             , setting : {
-                onCalcRightBound : null,
-                skipEmptyDate : false
+                onCalcRightBound : null
             }
         };
 
@@ -544,48 +549,43 @@
                 tempTimeout = null;
             }
 
-            while(true) {
+            if (stop) {
+                killWorker();
+                return;
+            }
 
-                if (stop) {
+            if (pause)
+                return;
+
+            var dl, dr;
+
+            dl = processor.boundRange[0];
+            dr = doCalcRightBound(dl);
+            processor.boundRange[0] = dr;
+
+            var visTurn = doFilter(dl, dr);
+
+            visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
+
+            doProcessing(visTurn, dl, dr);
+
+            try {
+                if (dl > processor.boundRange[1]) {
                     killWorker();
-                    return;
-                }
-
-                if (pause)
-                    return;
-
-                var dl, dr;
-
-                dl = processor.boundRange[0];
-                dr = doCalcRightBound(dl);
-                processor.boundRange[0] = dr;
-
-                var visTurn = doFilter(dl, dr);
-
-                visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
-
-                doProcessing(visTurn, dl, dr);
-
-                try {
-                    if (dl > processor.boundRange[1]) {
-                        killWorker();
-                        doFinished(dl, dr);
-                        throw new Error("break");
-                    } else {
-                        if (!visTurn.length && processor.setting.skipEmptyDate) {
-                            //loop();
-                            //tempTimeout = setTimeout(loop, 1);
-                        }
-                        else
-                            throw new Error("break");
+                    doFinished(dl, dr);
+                    throw new Error("break");
+                } else {
+                    if (!visTurn.length) {
+                        //loop();
+                        tempTimeout = setTimeout(loop, 1);
                     }
                 }
-                catch (e) {
-                    break;
-                }
-                finally {
-                    doProcessed(visTurn, dl, dr);
-                }
+            }
+            catch (e) {
+                //break;
+            }
+            finally {
+                doProcessed(visTurn, dl, dr);
             }
         }
 
@@ -1042,7 +1042,8 @@
                     if (render.setting.drawChildLabel) {
                         bufCtx.fillStyle = c.toString();// d.flash ? "white" : "gray";
                         setFontSize(s/2);
-                        bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0));
+                        bufCtx.textAlign = "center";
+                        bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0), render.size[0]/2);
                     }
                 }
                 if (!render.setting.drawHalo && beg) {
@@ -1112,6 +1113,7 @@
 
                         bufCtx.fillStyle = c;
                         setFontSize(s / 2);
+                        bufCtx.textAlign = "center";
                         bufCtx.fillText(getParentLabel(d), x, y + s * (render.setting.drawParent ? 1.5 : 0.5));
                     }
                 }
@@ -1224,7 +1226,7 @@
         return render;
     }
 
-    d3.blackHole = function(node) {
+    function blackHole(node) {
         // environment variables
         var parentNode = node || document.body
             , parser = Parser()
@@ -1252,6 +1254,9 @@
                     , scale : 1 // initial scale
                     , translate : [0, 0] // initial translate
                     , scaleExtent : [.1, 8]
+
+                    , colorless : "rgb(128, 128, 128)"
+                    , colorlessFlash : "rgb(211, 211, 211)"
 
                     //, showCountExt : true // show table of file's extension
                     //, onlyShownExt : true // show only extension which is shown
@@ -1285,15 +1290,12 @@
             , zoomScale
             , forceChild
             , forceParent
-            , colorless = d3.rgb("gray")
-            , colorlessFlash = d3.rgb("lightgray")
-
             ;
 
         bh.selectNode = function(node) {
             if (!arguments.length)
-                return userSelected || selected;
-            userSelected = node;
+                return selected;
+            selected = node;
             return bh;
         };
 
@@ -1325,6 +1327,13 @@
                 return parser.categoryHash;
             if (arg instanceof Object)
                 parser.categoryHash = d3.map(arg);
+            return bh;
+        };
+
+        bh.categoryMax = function(val) {
+            if(!arguments.length)
+                return parser.categoryMax;
+            parser.categoryMax = +val;
             return bh;
         };
 
@@ -1370,7 +1379,7 @@
         bh.setting.drawParentImg = true; // draw an image of parent
         bh.setting.padding = 25; // parent padding
         bh.setting.blendingLighter = true;
-        bh.setting.skipEmptyDate = false; // skipping empty date
+
 
         bh.on = function(key, value) {
             if (!key || !(typeof key === 'string'))
@@ -1434,22 +1443,32 @@
         };
         bh.filter(null);
 
+        function checkLinks(d, s) {
+            if (d.type === typeNode.parent)
+                return false;
+
+            var key = parser.setting.getParentKey()(s.nodeValue) + "_" + parser.setting.getChildKey()(d.nodeValue);
+            return links.has(key);
+        }
 
         function defaultGetSelectedColor(d) {
             var category = selectedCategory;
 
+            bh.setting.colorlessFlash = d3.rgb(bh.setting.colorlessFlash || 'gray');
+            bh.setting.colorless = d3.rgb(bh.setting.colorless || 'lightgray');
+
             if (!category && selected) {
                 if (selected.type == typeNode.parent) {
-                    return parser.setting.getParent()(d.nodeValue) !== selected.nodeValue
-                        ? d.flash ? colorlessFlash : colorless
+                    return !(d.parent === selected || checkLinks(d, selected))
+                        ? d.flash ? bh.setting.colorlessFlash : bh.setting.colorless
                         : d.flash ? d.flashColor : d.d3color;
                 }
                 if (selected.category)
                     category = selected.category;
             }
 
-            return category && category.color && compereColor(category.color, d.d3color)
-                ? d.flash ? colorlessFlash : colorless
+            return category && category !== d.category
+                ? d.flash ? bh.setting.colorlessFlash : bh.setting.colorless
                 : d.flash ? d.flashColor : d.d3color;
         }
         function attachGetSelectedColor(arg) {
@@ -1718,7 +1737,7 @@
                 : [];
         });
         render.onGetLastEvent(function() { return lastEvent; });
-        render.onGetSelectedNode(function() { return selected || userSelected; });
+        render.onGetSelectedNode(function() { return selected; });
         render.onGetNodeRadius(function(d) {
             return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
         });
@@ -1733,7 +1752,7 @@
             //TODO: lCom.showCommitMessage(d.message);
 
             var l = d.nodes.length,
-                n, p, fn;
+                n, p, fn, ind;
 
             p = d.parentNode;
             p.fixed = p.permanentFixed || (p == selected);
@@ -1750,7 +1769,7 @@
             while(--l > -1) {
                 n = d.nodes[l];
 
-                if (n.fixed) {
+                if (n.fixed && n !== selected) {
                     n.x = xW(n.x);
                     n.y = yH(n.y);
                     if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
@@ -1770,7 +1789,7 @@
                 }
 
                 n.size += 1;
-                n.fixed = n == selected;
+                n.fixed = n === selected; //TODO bug when zooming. particle become frozen
 
                 n.parent = p;
 
@@ -1783,11 +1802,11 @@
 
                 if (n.visible) {
                     n.category.now.indexOf(fn) < 0
-                    && n.category.now.push(fn);
+                        && n.category.now.push(fn);
                 }
                 else {
-                    (fn = n.category.now.indexOf(fn)) > -1
-                        && n.category.now.splice(parseInt(fn), 1);
+                    (ind = n.category.now.indexOf(fn)) > -1
+                        && n.category.now.splice(ind, 1);
 
                     n.flash *= .5;
                     n.alive *= .2;
@@ -1966,6 +1985,7 @@
 
         function initCallback(w, h, callback) {
             links = d3.map({});
+
             processor.boundRange = d3.extent(incData.map(parser.setting.getGroupBy()));
 
             layer.selectAll("*").remove();
@@ -2071,7 +2091,7 @@
         return bh;
     };
 
-    d3.blackHole.utils = {
+    blackHole.utils = {
         isFun : isFun,
         func : func,
         getFun : getFun,
@@ -2105,6 +2125,8 @@
                 clearTimeout(id);
             };
     })();
+
+    return blackHole;
 })();
 
 
