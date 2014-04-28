@@ -12,7 +12,8 @@
         var that = {
                 parentNode : node || document.body,
                 setting : {
-                    lengthOfCropName : 55
+                    lengthOfCropName : 55,
+                    createTitle : false
                 }
             }
             , categories
@@ -124,8 +125,11 @@
                     return name.length > l ? name.substr(0, l).trim() + '...' : name;
                 })
                 .style("fill", function(d) { return d3.rgb(d.value.color).brighter(); })
-                .append('title')
-                .text(function(d) { return '[' + d.key + ']' + (d.value ? (d.value.name ? ' ' + d.value.name : '') :  ''); })
+                .each(function() {
+                    that.setting.createTitle
+                        && d3.select(this).append('title')
+                        .text(function(d) { return '[' + d.key + ']' + (d.value ? (d.value.name ? ' ' + d.value.name : '') :  ''); })
+                })
             ;
 
             g.append("text")

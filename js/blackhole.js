@@ -1789,7 +1789,7 @@ d3.blackHole = (function() {
                 }
 
                 n.size += 1;
-                n.fixed = n === selected; //TODO bug when zooming. particle become frozen
+                n.fixed = false;//n === selected; //TODO bug when zooming. particle become frozen
 
                 n.parent = p;
 
@@ -2061,6 +2061,10 @@ d3.blackHole = (function() {
             forceParent.start();
             isFun(callback) && callback(bh);
         }
+
+        bh.getCanvas = function() {
+            return canvas;
+        };
 
         var hashStyle = document.createElement('canvas');
         bh.style = function(name, value, priority) {
