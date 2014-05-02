@@ -271,13 +271,13 @@
                 , ymaxII = -yScaleII(yScaleII.domain()[1] || 0)
                 ;
 
-            maxLine.style('display', (-ymax == (size[1] - offset)) ? 'none' : null);
-            maxLine.attr('transform', 'translate(0, ' + ymax + ')');
+            //maxLine.style('display', (-ymax == (size[1] - offset)) ? 'none' : null);
+            maxLine.attr('transform', 'translate(0, 0)');
             maxLine.selectAll('path')
                 .attr('d', 'M0,1V0H' + size[0] + 'V1');
 
-            maxLineEvent.style('display', (-ymaxII == (size[1] - offset - offsetEvent)) ? 'none' : null);
-            maxLineEvent.attr('transform', 'translate(0, ' + ymaxII + offsetEvent + ')');
+            //maxLineEvent.style('display', (-ymaxII == (size[1] - offset - offsetEvent)) ? 'none' : null);
+            maxLineEvent.attr('transform', 'translate(0, ' + offsetEvent + ')');
             maxLineEvent.selectAll('path')
                 .attr('d', 'M0,1V0H' + size[0] + 'V1');
 

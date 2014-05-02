@@ -19,10 +19,12 @@
             , categories
             , layer
             , lLeg
+            , gLeg
             , size = [w, h]
             , hashOnAction = {}
             , utils = d3.blackHole.utils
             , selected
+            , frozen
             , colorless = d3.rgb('gray')
             , mt = 5
             , ml = 5
@@ -38,9 +40,10 @@
             return that;
         };
 
-        ['mouseover', 'mousemove', 'mouseout'].forEach(function(key) {
+        ['mouseover', 'mousemove', 'mouseout', 'click'].forEach(function(key) {
             hashOnAction[key] = utils.func(hashOnAction, key);
         });
+
         function doFunc(key) {
             if (!key || !(typeof key === 'string'))
                 return that;
@@ -50,6 +53,8 @@
 
         function lme(d) {
             selected = d.value;
+            gLeg.selectAll("rect")
+                .style("fill", legColor)
             doFunc('mouseover')(selected, d3.event);
         }
 
@@ -59,15 +64,31 @@
 
         function lml(d) {
             selected = null;
+            gLeg.selectAll("rect")
+                .style("fill", legColor)
             doFunc('mouseout')(d.value, d3.event);
         }
 
+        function lc(d) {
+            if (frozen === d.value)
+                frozen = null;
+            else
+                frozen = d.value;
+            doFunc('click')(frozen, d3.event);
+            that.update();
+        }
+
         function legColor(d) {
-            return selected
-                ? selected == d.value
-                ? d.value.color
-                : colorless
-                : d.value.color;
+            var sel = selected || frozen;
+            return selected && frozen
+                ? selected === d.value || frozen === d.value
+                    ? d.value.color
+                    : colorless
+                : sel
+                    ? sel === d.value
+                        ? d.value.color
+                        : colorless
+                    : d.value.color;
         }
 
         function initLegend() {
@@ -106,6 +127,7 @@
                 .on("mouseover", lme)
                 .on("mousemove", lmm)
                 .on("mouseout", lml)
+                .on("click", lc)
                 .attr("class", "gLeg")
                 .attr("transform", function(d, i) {
                     return "translate(" + [0, i * 18] + ")";
@@ -137,44 +159,46 @@
                 .style("font-size", "11px")
                 .attr("transform", "translate(" + [2, 12] + ")")
             ;
+
+            gLeg = null;
         }
 
         function sortLeg(b, a) {
-            return d3.ascending(a.value.now.length, b.value.now.length);
+            return d3.ascending(a.value === frozen ? Infinity : a.value.now.length, b.value === frozen ? Infinity : b.value.now.length);
         }
 
         function sortLegK(b, a) {
-            return d3.ascending(a.key, b.key);
+            return d3.ascending(a.value.name, b.value.name);
         }
 
         function updateLegend() {
             if (!lLeg || lLeg.empty())
                 return;
 
-            var g = lLeg.selectAll(".gLeg");
+            gLeg = gLeg || lLeg.selectAll(".gLeg");
 
             function wl(d) {
                 return d.value.now.length;
             }
 
-            g.selectAll(".gtLeg")
+            gLeg.selectAll(".gtLeg")
                 .text(wl)
             ;
 
-            var wb = d3.max(g.selectAll(".gtLeg"), function(d) {
+            var wb = d3.max(gLeg.selectAll(".gtLeg"), function(d) {
                 return d[0].clientWidth || d[0].getComputedTextLength();
             }) + 4;
 
-            g.selectAll("rect")
+            gLeg.selectAll("rect")
                 .style("fill", legColor)
                 .attr("width", wb)
             ;
 
-            g.selectAll(".gttLeg")
+            gLeg.selectAll(".gttLeg")
                 .attr("transform", "translate(" + [wb + 2, 12] + ")")
             ;
 
-            g.sort(sortLegK).sort(sortLeg)
+            gLeg.sort(sortLegK).sort(sortLeg)
                 .style("visibility", function(d, i) {
                     return !wl(d) || i * 18 > lLeg.attr("height") ? "hidden" : "visible";
                 })
@@ -200,6 +224,7 @@
             if (!arguments.length)
                 return selected;
             selected = cat;
+            that.update();
             return that;
         };
 

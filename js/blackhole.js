@@ -248,20 +248,12 @@ d3.blackHole = (function() {
         }
 
         /**
-         * Create a Node
-         * @param d
-         * @param type
-         * @returns {Object}
-         * @constructor
+         * Create a random position for node
+         * @param type is {typeNode}
+         * @returns {{x: number, y: number}}
          */
-        function Node(d, type) {
-            var isChild = type == typeNode.child
-                , c = isChild
-                    ? parser.setting.getCategoryKey()(d)
-                    : parser.setting.parentColor(parser.setting.getParentKey()(d))
-                , cat
-                , x
-                , y
+        function createPostion(d, type) {
+            var x, y
                 , w = parser.size[0]
                 , h = parser.size[1]
                 , w2 = w / 2
@@ -271,18 +263,10 @@ d3.blackHole = (function() {
                 , parentPos
                 ;
 
-            if (type == typeNode.child) {
-                cat = Category(c, parser.setting.getCategoryName()(d));
-                cat.all++;
-                c = cat.color;
-            }
-
             x = w * Math.random();
             y = h * Math.random();
-
-            !isChild &&
+            !type == typeNode.child &&
                 (parentPos = parser.setting.getParentPosition()(d, [x, y]));
-
             if (type == typeNode.parent) {
                 if (!parentPos || parentPos.length < 2) {
                     if (randomTrue()) {
@@ -307,24 +291,53 @@ d3.blackHole = (function() {
                     y = parentPos[1];
                 }
             }
+            return {x: x, y: y};
+        }
+
+        /**
+         * Create a Node
+         * @param d
+         * @param type
+         * @returns {Object}
+         * @constructor
+         */
+        function Node(d, type) {
+            var isChild = type == typeNode.child
+                , c = isChild
+                    ? parser.setting.getCategoryKey()(d)
+                    : parser.setting.parentColor(parser.setting.getParentKey()(d))
+                , cat
+                , x
+                , y
+                ;
+
+            if (isChild) {
+                cat = Category(c, parser.setting.getCategoryName()(d));
+                cat.all++;
+                c = cat.color;
+            }
+
+            var pos = createPostion(d, type);
+            x = pos.x;
+            y = pos.y;
 
             return {
-                x : x,
-                y : y,
-                id : type + "_" + parser.setting.getKey()(d, type),
-                size : !isChild ? parser.setting.getParentRadius()(d) : parser.setting.getChildRadius()(d),
-                fixed : true,
-                permanentFixed : !isChild ? parser.setting.getParentFixed()(d) : false,
-                visible : false,
-                links : 0,
-                type : type,
-                color : c.toString(),
-                d3color : d3.rgb(c),
+                x: x,
+                y: y,
+                id: type + "_" + parser.setting.getKey()(d, type),
+                size: !isChild ? parser.setting.getParentRadius()(d) : parser.setting.getChildRadius()(d),
+                fixed: true,
+                permanentFixed: !isChild ? parser.setting.getParentFixed()(d) : false,
+                visible: false,
+                links: 0,
+                type: type,
+                color: c.toString(),
+                d3color: d3.rgb(c),
                 flashColor: d3.rgb(!isChild ? c : c.brighter().brighter()),
-                category : cat,
-                parent : !isChild ? parser.setting.getParentKey()(d) : null,
-                img : !isChild ? parser.setting.getParentImage()(d) : null,
-                nodeValue : d
+                category: cat,
+                parent: !isChild ? parser.setting.getParentKey()(d) : null,
+                img: !isChild ? parser.setting.getParentImage()(d) : null,
+                nodeValue: d
             };
         }
 
@@ -443,14 +456,9 @@ d3.blackHole = (function() {
         }
 
         parser.setInitState = function(node) {
-            var w = parser.size[0]
-                , h = parser.size[1]
-                , x
-                , y
-                ;
-
-            x = w * Math.random();
-            y = h * Math.random();
+            var pos = createPostion(node.nodeValue, node.type);
+            node.x = pos.x;
+            node.y = pos.y;
         }
 
         parser.refreshCategories = function() {
@@ -471,6 +479,7 @@ d3.blackHole = (function() {
         var pause
             , stop
             , worker
+            , tempTimeout
             ;
 
         var processor = {
@@ -502,6 +511,11 @@ d3.blackHole = (function() {
             if (worker) {
                 clearInterval(worker);
                 worker = null;
+            }
+
+            if (tempTimeout) {
+                clearTimeout(tempTimeout);
+                tempTimeout = null;
             }
         }
 
@@ -541,7 +555,6 @@ d3.blackHole = (function() {
             doFunc("onRecalc")(d);
         }
 
-        var tempTimeout;
         function loop() {
 
             if (tempTimeout) {
@@ -565,7 +578,7 @@ d3.blackHole = (function() {
 
             var visTurn = doFilter(dl, dr);
 
-            visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
+            visTurn && visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
 
             doProcessing(visTurn, dl, dr);
 
@@ -575,7 +588,7 @@ d3.blackHole = (function() {
                     doFinished(dl, dr);
                     throw new Error("break");
                 } else {
-                    if (!visTurn.length) {
+                    if (!visTurn || !visTurn.length) {
                         //loop();
                         tempTimeout = setTimeout(loop, 1);
                     }
@@ -1273,6 +1286,7 @@ d3.blackHole = (function() {
             , selected
             , userSelected
             , selectedCategory
+            , frozenCategory
             , nodes
             , links
             , incData
@@ -1305,6 +1319,13 @@ d3.blackHole = (function() {
             selectedCategory = category;
             return bh;
         };
+
+        bh.frozenCategory = function(category) {
+            if (!arguments.length)
+                return frozenCategory;
+            frozenCategory = category;
+            return bh;
+        }
 
         bh.parents = function(arg) {
             if (!arguments.length)
@@ -1712,8 +1733,9 @@ d3.blackHole = (function() {
         }
 
         function filterVisible(d) {
-            !d.visible && d.type == typeNode.child && (d.paths = []);
-            return checkVisible(d) && (d.visible || d.alive);
+            var vis = checkVisible(d) && (d.visible || d.alive);
+            !vis && d.type == typeNode.child && (d.paths = []);
+            return vis && (d.type != typeNode.child || !frozenCategory || frozenCategory == d.category);
         }
 
         function filterChild(d) {
@@ -1742,14 +1764,9 @@ d3.blackHole = (function() {
             return d.type == typeNode.child ? Math.sqrt(normalizeRadius(d)) : normalizeRadius(d);
         });
 
-        //TODO: processor.onProcessing();
-        //TODO: processor.onProcessed();
-
         processor.onRecalc(function reCalc(d) {
             if (!processor.IsRun())
                 return;
-
-            //TODO: lCom.showCommitMessage(d.message);
 
             var l = d.nodes.length,
                 n, p, fn, ind;
@@ -1770,13 +1787,15 @@ d3.blackHole = (function() {
                 n = d.nodes[l];
 
                 if (n.fixed && n !== selected) {
-                    n.x = xW(n.x);
-                    n.y = yH(n.y);
                     if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
-                         n.x = p.x;
-                         n.y = p.y;
+                         n.x = +p.x;
+                         n.y = +p.y;
                     }
-                    n.paths = []; //[{x: n.x, y: n.y}];
+                    else {
+                        n.x = xW(n.x);
+                        n.y = yH(n.y);
+                    }
+                    n.paths = [];
 
                     if (bh.setting.increaseChildWhenCreated) {
                         n.correctSize = n.size;
@@ -1844,14 +1863,11 @@ d3.blackHole = (function() {
         function doRender() {
             rqId = requestAnimationFrame(doRender, undefined);
 
-            //TODO: lHis && lHis.style("display", setting.showHistogram ? null : "none");
-
-            if (valid)
+            if (!ctx || valid)
                 return;
 
             valid = true;
 
-            valid && // so stupid =)
             ctx.save();
             ctx.clearRect(0, 0, bh.size()[0], bh.size()[1]);
 
@@ -1908,15 +1924,24 @@ d3.blackHole = (function() {
                 doMouseOverNode(d, d3.event);
             }
             doMouseMove(d, d3.event);
-            //todo showToolTip(d, d3.event);
-            //todo moveToolTip(d, d3.event);
-            //todo updateLegend();
         }
 
         function resortNodes(a, b) {
             return a.type == typeNode.child && b.type == typeNode.child
                 ? d3.ascending(incData.indexOf(a.nodeValue), incData.indexOf(b.nodeValue))
-                : 1;
+                : -Infinity;
+        }
+
+        function reinitNode(a) {
+            a.alive = 0;
+            a.flash = 0;
+            a.opacity = 0;
+            a.parent = null;
+            a.visible = false;
+            parser.setInitState(a);
+            a.fixed = a.type == typeNode.child || a.permanentFixed;
+            delete a.px;
+            delete a.py;
         }
 
         /**
@@ -1931,19 +1956,8 @@ d3.blackHole = (function() {
 
             if(!reinitData && nodes) {
                 nodes.sort(function(a, b) {
-                    a.alive = 0;
-                    a.flash = 0;
-                    a.opacity = 0;
-                    a.parent = null;
-                    a.visible = false;
-                    parser.setInitState(a);
-
-                    b.alive = 0;
-                    b.flash = 0;
-                    b.opacity = 0;
-                    b.parent = null;
-                    b.visible = false;
-                    parser.setInitState(b);
+                    reinitNode(a);
+                    reinitNode(b);
 
                     return resortNodes(a, b);
                 });
@@ -1998,11 +2012,11 @@ d3.blackHole = (function() {
             w = bh.size()[0];
             h = bh.size()[1];
 
-            xW = d3.scale.linear()
+            xW = xW || d3.scale.linear()
                 .range([0, w])
                 .domain([0, w]);
 
-            yH = d3.scale.linear()
+            yH = yH || d3.scale.linear()
                 .range([0, h])
                 .domain([0, h]);
 
@@ -2011,6 +2025,8 @@ d3.blackHole = (function() {
                 .scale(lastEvent.scale)
                 .translate(lastEvent.translate)
                 .on("zoom", zooming);
+
+            ctx = null;
 
             canvas = layer.append("canvas")
                 .text("This browser don't support element type of Canvas.")
