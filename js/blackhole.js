@@ -459,6 +459,10 @@ d3.blackHole = (function() {
             var pos = createPostion(node.nodeValue, node.type);
             node.x = pos.x;
             node.y = pos.y;
+
+            node.size = node.type === typeNode.parent
+                ? parser.setting.getParentRadius()(node.nodeValue)
+                : parser.setting.getChildRadius()(node.nodeValue);
         }
 
         parser.refreshCategories = function() {
@@ -684,6 +688,7 @@ d3.blackHole = (function() {
                 drawVanishingTail: false,
                 drawAsPlasma: false,
                 drawParentImg: false,
+                hasLabelMaxWidth: false,
 
                 padding: 0,
                 lengthTrack: 2,
@@ -1041,7 +1046,7 @@ d3.blackHole = (function() {
 
                     x = Math.floor(d.x);
                     y = Math.floor(d.y);
-                    s = getNodeRadius(d) * (render.setting.drawHalo ? render.setting.drawAsPlasma ? 8 : 10 : .8);
+                    s = getNodeRadius(d) * (render.setting.drawHalo ? (render.setting.drawAsPlasma ? 8 : 10) : .8);
 
                     if (render.setting.drawChild) {
                         if (!render.setting.drawHalo) {
@@ -1054,9 +1059,13 @@ d3.blackHole = (function() {
 
                     if (render.setting.drawChildLabel) {
                         bufCtx.fillStyle = c.toString();// d.flash ? "white" : "gray";
-                        setFontSize(s/2);
+                        s *= (render.setting.drawHalo ? 1 : (render.setting.drawAsPlasma ? 10 : 12.5));
+                        setFontSize(s / 2);
                         bufCtx.textAlign = "center";
-                        bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0), render.size[0]/2);
+                        if (render.setting.hasLabelMaxWidth)
+                            bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0), render.size[0]/2);
+                        else
+                            bufCtx.fillText(getChildLabel(d), x, y + (render.setting.drawChild ? s / 2 : 0));
                     }
                 }
                 if (!render.setting.drawHalo && beg) {
@@ -1246,7 +1255,8 @@ d3.blackHole = (function() {
             , processor = Processor()
             , render = Render()
             , bh = {
-                IsRun : processor.IsRun
+                version : '0.0.1'
+                , IsRun : processor.IsRun
                 , IsPaused : processor.IsPaused
                 , stop : processor.stop
                 , pause : processor.pause
@@ -1400,6 +1410,7 @@ d3.blackHole = (function() {
         bh.setting.drawParentImg = true; // draw an image of parent
         bh.setting.padding = 25; // parent padding
         bh.setting.blendingLighter = true;
+        bh.setting.hasLabelMaxWidth = true;
 
 
         bh.on = function(key, value) {
@@ -1710,6 +1721,10 @@ d3.blackHole = (function() {
                     d.x -= x;
                     d.y -= y;
                 }
+                d.paths && d.flash && d.paths.push({
+                    x : d.x,
+                    y : d.y
+                });
             };
         }
 
@@ -1891,7 +1906,10 @@ d3.blackHole = (function() {
         function getNodeFromPos(pos) {
             for (var i = nodes.length - 1; i >= 0; i--) {
                 var d = nodes[i];
-                if ((!d.fixed || d.permanentFixed) && d.opacity && contain(d, pos))
+                if ((!d.fixed || d.permanentFixed)
+                    && d.opacity
+                    && contain(d, pos)
+                    && (!frozenCategory || d.category === frozenCategory))
                     return d;
             }
             return null;

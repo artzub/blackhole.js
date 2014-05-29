@@ -111,10 +111,14 @@
             .on('finished', function() { uiStatus.text("Completed!!!"); })
             .on('starting', function() {
                     uiStatus.text("Start...");
+                    cur = 0;
             })
             .on('started', function() { uiStatus.text("Run..."); })
             .on('processing', prints)
             //.on('processed', prints)
+            .on('parsing', function() {
+                uiStatus.text(cur++ + ' of ' + all);
+            })
             .on('mouseovernode', printm)
             .on('mouseoutnode', printm)
             .on('mousemove', printm)
