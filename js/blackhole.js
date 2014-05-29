@@ -1,7 +1,7 @@
 /**
  * Created by artzub on 27.01.14.
  * @author Artem Zubkov
- * @version 1.0.0
+ * @version 0.0.1
  */
 
 "use strict";
