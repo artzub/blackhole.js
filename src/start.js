@@ -1,5 +1,5 @@
 /**
- * BlackholeJS is a library for dynamic data visualization.
+ * BlackHoleJS is a library for dynamic data visualization.
  * Powered by http://d3js.org
  * @author: Artem Zubkov
  * @email: artzub@gmail.com

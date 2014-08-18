@@ -1,2 +1,2 @@
-    d3.blackhole = blackhole;
+    d3.blackHole = blackhole;
 }();

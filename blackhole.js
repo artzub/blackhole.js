@@ -4,7 +4,6 @@
     var blackhole = {
         version: "0.0.1"
     };
-    "use strict";
     (function() {
         var lastTime = 0;
         var vendors = [ "ms", "moz", "webkit", "o" ];
@@ -1399,5 +1398,5 @@
         getFun: getFun,
         emptyFun: emptyFun
     };
-    d3.blackhole = blackhole;
+    d3.blackHole = blackhole;
 }();

@@ -23,8 +23,9 @@ d3.blackHole = (function() {
      * @param {Number} time
      */
     function asyncForEach(items, fn, time, finishCallback) {
-        if (!(items instanceof Array))
+        if (!(items instanceof Array)) {
             return;
+        }
 
         var workArr = items.reverse().concat();
 
@@ -462,13 +463,13 @@ d3.blackHole = (function() {
             node.size = node.type === typeNode.parent
                 ? parser.setting.getParentRadius()(node.nodeValue)
                 : parser.setting.getChildRadius()(node.nodeValue);
-        }
+        };
 
         parser.refreshCategories = function() {
             parser.categoryHash.forEach(function(key, value) {
                 value.now.splice(0);
             });
-        }
+        };
 
         return parser;
     }
@@ -618,7 +619,7 @@ d3.blackHole = (function() {
                 worker = setInterval(loop, step);
             }
             return processor;
-        }
+        };
 
         processor.start = function() {
             stop = pause = false;
@@ -2180,7 +2181,7 @@ d3.blackHole = (function() {
         }
 
         return bh;
-    };
+    }
 
     blackHole.utils = {
         isFun : isFun,

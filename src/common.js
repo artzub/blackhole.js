@@ -1,7 +1,6 @@
 /**
  * rAF & cAF
  */
-"use strict";
 
 (function() {
     var lastTime = 0;
