@@ -1,3 +1,2 @@
-    this.d3 = this.d3 || {};
-    this.d3.blackhole = blackhole;
+    d3.blackhole = blackhole;
 }();

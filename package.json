@@ -1,0 +1,9 @@
+{
+    "name": "blackhole.js",
+    "version": "0.0.1",
+    "private": true,
+    "devDependencies": {
+        "smash": "0.0.12",
+        "uglify-js": "^2.4.15"
+    }
+}

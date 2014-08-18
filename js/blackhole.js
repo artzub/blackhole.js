@@ -409,10 +409,10 @@ d3.blackHole = (function() {
         };
 
         function parse(inData, outData) {
-            if (data) {
-                var i = data.length;
+            if (inData) {
+                var d, i = inData.length;
                 while(--i > -1) {
-                    d = data[i];
+                    d = inData[i];
                     parseNode(d, outData);
                 }
                 doAfterParsing(outData);
@@ -422,7 +422,6 @@ d3.blackHole = (function() {
         function parseNode(d, ns) {
             var j
                 , n
-                , d
                 , groupBy
                 ;
 
@@ -486,6 +485,8 @@ d3.blackHole = (function() {
             , tempTimeout
             ;
 
+        var step = ONE_SECOND;
+
         var processor = {
             killWorker : killWorker
             , boundRange : [0, 1]
@@ -497,7 +498,8 @@ d3.blackHole = (function() {
             , onRecalc : null
             , onFilter : null
             , setting : {
-                onCalcRightBound : null
+                onCalcRightBound : null,
+                skipEmptyDate : true
             }
         };
 
@@ -582,7 +584,7 @@ d3.blackHole = (function() {
 
             var visTurn = doFilter(dl, dr);
 
-            visTurn && visTurn.length && asyncForEach(visTurn, doRecalc, ONE_SECOND / (visTurn.length || ONE_SECOND));
+            visTurn && visTurn.length && asyncForEach(visTurn, doRecalc, step / (visTurn.length || step));
 
             doProcessing(visTurn, dl, dr);
 
@@ -592,7 +594,7 @@ d3.blackHole = (function() {
                     doFinished(dl, dr);
                     throw new Error("break");
                 } else {
-                    if (!visTurn || !visTurn.length) {
+                    if ((!visTurn || !visTurn.length) && processor.setting.skipEmptyDate) {
                         //loop();
                         tempTimeout = setTimeout(loop, 1);
                     }
@@ -606,13 +608,25 @@ d3.blackHole = (function() {
             }
         }
 
+        processor.step = function(arg) {
+            if (!arguments.length || arg === undefined || arg == null || arg < 0)
+                return step;
+            step = arg;
+
+            if (processor.IsRun()) {
+                killWorker();
+                worker = setInterval(loop, step);
+            }
+            return processor;
+        }
+
         processor.start = function() {
             stop = pause = false;
             killWorker();
 
             doStarted();
 
-            worker = setInterval(loop, ONE_SECOND);
+            worker = setInterval(loop, step);
             return processor;
         };
 
@@ -826,30 +840,56 @@ d3.blackHole = (function() {
 
                 var rs = d.paths.slice(0).reverse()
                     , p
+                    , lrs = rs.length
                     ;
 
                 if (!d.flash && d.paths.length < render.setting.lengthTrack)
                     d.paths = [];
 
                 if (d.paths.length > render.setting.lengthTrack)
-                    d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
+                    d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 5);
 
-                trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
-                for (p in rs) {
-                    if (!rs.hasOwnProperty(p))
-                        continue;
+                if (lrs) {
+                    var test = false;
+                    if (test) {
+                        trackCtx.beginPath();
+                        p = rs.pop();
+                        trackCtx.moveTo(Math.floor(p.x), Math.floor(p.y));
+                        while (p = rs.pop()) {
+                            trackCtx.lineTo(
+                                Math.floor(p.x),
+                                Math.floor(p.y)
+                            );
+                        }
+                        trackCtx.lineTo(
+                            Math.floor(d.x),
+                            Math.floor(d.y)
+                        );
+                        trackCtx.stroke();
+                    }
+                    else {
+                        while (p = rs.pop()) {
+                            trackCtx.beginPath();
+                            trackCtx.moveTo(Math.floor(p.x), Math.floor(p.y));
 
-                    trackCtx.lineTo(
-                        Math.floor(rs[p].x),
-                        Math.floor(rs[p].y)
-                    );
+                            p = rs.length ? rs[rs.length - 1] : d;
+
+                            trackCtx.lineTo(
+                                Math.floor(p.x),
+                                Math.floor(p.y)
+                            );
+                            trackCtx.globalAlpha = ((lrs - rs.length + 1) / lrs);
+                            trackCtx.stroke();
+                        }
+                    }
                 }
-                trackCtx.stroke();
 
                 d.alive && d.parent && (d.flash || d.paths.length > 1) && d.paths.push({
                     x : d.x,
                     y : d.y
                 });
+
+                !d.alive && d.paths.splice(0);
             }
 
             trackCtx.restore();
@@ -1335,7 +1375,7 @@ d3.blackHole = (function() {
                 return frozenCategory;
             frozenCategory = category;
             return bh;
-        }
+        };
 
         bh.parents = function(arg) {
             if (!arguments.length)
@@ -1474,6 +1514,13 @@ d3.blackHole = (function() {
             return bh;
         };
         bh.filter(null);
+
+        bh.speed = function(milliseconds) {
+            var result = processor.step(milliseconds);
+            if (result == processor)
+                return bh;
+            return result;
+        }
 
         function checkLinks(d, s) {
             if (d.type === typeNode.parent)
@@ -1762,7 +1809,13 @@ d3.blackHole = (function() {
             return d.type === typeNode.parent && (d.visible || d.opacity);
         }
 
-        render.onGetChildNodes(function() { return !restart && forceChild ? forceChild.nodes().filter(filterVisible) : []; });
+        render.onGetChildNodes(function() {
+            var sort = null;//bh.sort();
+            var data = !restart && forceChild ? forceChild.nodes().filter(filterVisible).sort() : [];
+            return isFun(sort) ? data.sort(function(a, b) {
+                return sort(a.nodeValue, b.nodeValue);
+            }) : data;
+        });
         render.onGetParentNodes(function() { return !restart && forceParent ? forceParent.nodes().filter(filterVisible) : []; });
         render.onGetLinks(function() {
             return links
@@ -1994,7 +2047,7 @@ d3.blackHole = (function() {
 
             doStating();
 
-            forceChild && forceChild.nodes([]).stop()
+            forceChild && forceChild.nodes([]).stop();
 
             forceParent && forceParent.nodes([]).stop();
 
