@@ -580,8 +580,8 @@ blackhole = function (node) {
                     n.y = +p.y;
                 }
                 else {
-                    n.x = xW(n.x);
-                    n.y = yH(n.y);
+                    n.x = d.x || xW(n.x);
+                    n.y = d.y || yH(n.y);
                 }
                 n.paths = [];
 
