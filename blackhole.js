@@ -2,7 +2,7 @@
 
 !function() {
     var blackhole = {
-        version: "0.0.1"
+        version: "0.0.5"
     };
     (function() {
         var lastTime = 0;
@@ -1010,7 +1010,7 @@
             attachGetCreateNearParent.value = arg;
         }
         bh.on("getCreateNearParent", defaultGetCreateNearParent);
-        [ "finished", "starting", "started", "mouseovernode", "mousemove", "mouseoutnode" ].forEach(function(key) {
+        [ "finished", "starting", "started", "mouseovernode", "mousemove", "mouseoutnode", "particleattarget" ].forEach(function(key) {
             hashOnAction[key] = func(hashOnAction, key);
         });
         function doFunc(key) {
@@ -1033,6 +1033,9 @@
         }
         function doMouseMove(d, e) {
             return doFunc("mousemove")(d, e);
+        }
+        function doParticleAtTarget(d, p) {
+            return doFunc("particleattarget")(d, p);
         }
         bh.size = function(arg) {
             if (!arguments.length) return parser.size;
@@ -1107,6 +1110,7 @@
                 d.links = 0;
             });
             return function(d) {
+                if (restart) return;
                 blink(d, bh.setting.childLife > 0);
                 if (!d.parent || !d.visible) return;
                 var node = d.parent, l, r, x, y;
@@ -1116,6 +1120,13 @@
                 y = d.y - node.y;
                 l = Math.sqrt(x * x + y * y);
                 r = render.onGetNodeRadius()(d) / 2 + (render.onGetNodeRadius()(node) + bh.setting.padding);
+                if (typeof d.lr !== "undefined" && d.lr - l < alpha * 10) {
+                    if (!d.atTarget) {
+                        d.atTarget = true;
+                        doParticleAtTarget(d, node);
+                    }
+                }
+                d.lr = l;
                 if (l != r) {
                     l = (l - r) / (l || 1) * (alpha || 1);
                     x *= l;
@@ -1205,6 +1216,7 @@
                 n.size += 1;
                 n.fixed = false;
                 n.parent = p;
+                n.atTarget = false;
                 n.visible = attachGetVisibleByStep()(d, n);
                 fn = parser.setting.getChildKey()(n.nodeValue);
                 n.flash = 100;

@@ -297,7 +297,7 @@ blackhole = function (node) {
     }
     bh.on('getCreateNearParent', defaultGetCreateNearParent);
 
-    ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode'].forEach(function(key) {
+    ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode', 'particleattarget'].forEach(function(key) {
         hashOnAction[key] = func(hashOnAction, key);
     });
 
@@ -327,6 +327,10 @@ blackhole = function (node) {
 
     function doMouseMove(d, e) {
         return doFunc('mousemove')(d, e);
+    }
+
+    function doParticleAtTarget(d, p) {
+        return doFunc('particleattarget')(d, p);
     }
 
     bh.size = function(arg) {
@@ -459,6 +463,10 @@ blackhole = function (node) {
         });
 
         return function(d) {
+
+            if (restart)
+                return;
+
             blink(d, bh.setting.childLife > 0);
             if (!d.parent || !d.visible)
                 return;
@@ -479,6 +487,15 @@ blackhole = function (node) {
             r = render.onGetNodeRadius()(d) / 2 +
                 (render.onGetNodeRadius()(node) +
                     bh.setting.padding);
+
+            if (typeof d.lr !== "undefined" && d.lr - l < alpha * 10) {
+                if (!d.atTarget) {
+                    d.atTarget = true;
+                    doParticleAtTarget(d, node);
+                }
+            }
+            d.lr = l;
+
             if (l != r) {
                 l = (l - r) / (l || 1) * (alpha || 1);
                 x *= l;
@@ -487,6 +504,7 @@ blackhole = function (node) {
                 d.x -= x;
                 d.y -= y;
             }
+
             d.paths && d.flash && d.paths.push({
                 x : d.x,
                 y : d.y
@@ -599,6 +617,7 @@ blackhole = function (node) {
             n.fixed = false;//n === selected; //TODO bug when zooming. particle become frozen
 
             n.parent = p;
+            n.atTarget = false;
 
             n.visible = attachGetVisibleByStep()(d, n);
             fn = parser.setting.getChildKey()(n.nodeValue);

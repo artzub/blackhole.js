@@ -158,9 +158,7 @@ function Render() {
 
             trackCtx.fillStyle = "none";
             if (test)
-                trackCtx.lineWidth = .5;
-
-            while (--l > -1) {
+                trackCtx.lineWidth = .5;            while (--l > -1) {
                 d = nodes[l];
 
                 curColor = getSelectedColor(d);
