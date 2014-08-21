@@ -143,6 +143,7 @@ blackhole = function (node) {
         Object.defineProperty(bh.setting, 'parentColors', makeGetterSetter(parser.setting, 'parentColor'));
         Object.defineProperty(bh.setting, 'categoryColors', makeGetterSetter(parser.setting, 'childColor'));
         Object.defineProperty(bh.setting, 'skipEmptyDate', makeGetterSetter(processor.setting, 'skipEmptyDate'));
+        Object.defineProperty(bh.setting, 'realtime', makeGetterSetter(processor.setting, 'realtime'));
         Object.defineProperty(bh.setting, 'blendingLighter', {
             get : function() { return render.setting.compositeOperation === 'lighter'; },
             set : function(value) { render.setting.compositeOperation = value === true ? 'lighter' : 'source-over'; },
@@ -165,6 +166,7 @@ blackhole = function (node) {
     bh.setting.padding = 25; // parent padding
     bh.setting.blendingLighter = true;
     bh.setting.hasLabelMaxWidth = true;
+    bh.setting.realtime = false;
 
 
     bh.on = function(key, value) {
@@ -589,7 +591,7 @@ blackhole = function (node) {
             p.visible = true;
         }
 
-        while(--l > -1) {
+        while(l--) {
             n = d.nodes[l];
 
             if (n.fixed && n !== selected) {
@@ -759,6 +761,30 @@ blackhole = function (node) {
     }
 
     /**
+     * Append data
+     * @param {Array} data
+     */
+    bh.append = function(data) {
+        if (!(data instanceof Array) || !nodes)
+            return false;
+
+        incData = incData.concat(data);
+        nodes = nodes.concat(parser.nodes(data));
+
+        processor.IsRun()
+            && processor.pause();
+
+        var bound = d3.extent(data.map(parser.setting.getGroupBy()));
+        processor.boundRange = [processor.boundRange[0] > processor.boundRange[1]
+            ? processor.boundRange[1]
+            : processor.boundRange[0], bound[1]];
+
+        processor.IsRun()
+            && processor.resume();
+        return true;
+    };
+
+    /**
      * Running dynamic visualization
      * @param {Array} inData
      * @param {Number} width
@@ -769,7 +795,6 @@ blackhole = function (node) {
     bh.start = function(inData, width, height, reInitData, callback) {
         restart = true;
         processor.killWorker();
-
 
         if (rqId)
             restartFunction = insideRestartShow;
@@ -812,6 +837,7 @@ blackhole = function (node) {
                 var sort = bh.sort();
                 incData = isFun(sort) ? inData.sort(sort) : inData;
 
+                parser.init();
                 parser.nodes(incData, function (newNodes) {
                     nodes = newNodes;
                     initCallback(w, h, callback);

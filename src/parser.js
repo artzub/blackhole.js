@@ -159,7 +159,7 @@ function Parser() {
      * @param {typeNode} type
      * @returns {{x: number, y: number}}
      */
-    function createPostion(d, type) {
+    function createPosition(d, type) {
         var x, y
             , w = parser.size[0]
             , h = parser.size[1]
@@ -224,7 +224,7 @@ function Parser() {
             c = cat.color;
         }
 
-        var pos = createPostion(d, type);
+        var pos = createPosition(d, type);
         x = pos.x;
         y = pos.y;
 
@@ -290,14 +290,15 @@ function Parser() {
         return n;
     }
 
-    parser.nodes = function(data, callback) {
-        var ns = []
-            ;
-
+    parser.init = function() {
         parser.parentHash = d3.map({});
         parser.childHash = d3.map({});
         parser.categoryHash = d3.map({});
         parser.categoryMax = 0;
+    };
+
+    parser.nodes = function(data, callback) {
+        var ns = [];
 
         doBeforeParsing(data);
 
@@ -361,7 +362,7 @@ function Parser() {
     }
 
     parser.setInitState = function(node) {
-        var pos = createPostion(node.nodeValue, node.type);
+        var pos = createPosition(node.nodeValue, node.type);
         node.x = pos.x;
         node.y = pos.y;
 

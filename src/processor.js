@@ -25,6 +25,7 @@ function Processor() {
         , onRecalc : null
         , onFilter : null
         , setting : {
+            realtime : false,
             onCalcRightBound : null,
             skipEmptyDate : true
         }
@@ -117,9 +118,14 @@ function Processor() {
 
         try {
             if (dl > processor.boundRange[1]) {
-                killWorker();
-                doFinished(dl, dr);
-                throw new Error("break");
+                if (!realtime) {
+                    killWorker();
+                    doFinished(dl, dr);
+                    throw new Error("break");
+                } else {
+                    //processor.boundRange[0] = processor.boundRange[1];
+                    processor.pause();
+                }
             } else {
                 if ((!visTurn || !visTurn.length) && processor.setting.skipEmptyDate) {
                     //loop();

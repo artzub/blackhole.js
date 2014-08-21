@@ -170,7 +170,7 @@
             }
             return cat;
         }
-        function createPostion(d, type) {
+        function createPosition(d, type) {
             var x, y, w = parser.size[0], h = parser.size[1], w2 = w / 2, w5 = w / 5, h2 = h / 2, h5 = h / 5, parentPos;
             x = w * Math.random();
             y = h * Math.random();
@@ -199,7 +199,7 @@
                 cat.all++;
                 c = cat.color;
             }
-            var pos = createPostion(d, type);
+            var pos = createPosition(d, type);
             x = pos.x;
             y = pos.y;
             return {
@@ -245,12 +245,14 @@
             }
             return n;
         }
-        parser.nodes = function(data, callback) {
-            var ns = [];
+        parser.init = function() {
             parser.parentHash = d3.map({});
             parser.childHash = d3.map({});
             parser.categoryHash = d3.map({});
             parser.categoryMax = 0;
+        };
+        parser.nodes = function(data, callback) {
+            var ns = [];
             doBeforeParsing(data);
             if (isFun(callback)) {
                 asyncForEach(data, function(d) {
@@ -293,7 +295,7 @@
             doParsing(n);
         }
         parser.setInitState = function(node) {
-            var pos = createPostion(node.nodeValue, node.type);
+            var pos = createPosition(node.nodeValue, node.type);
             node.x = pos.x;
             node.y = pos.y;
             node.size = node.type === typeNode.parent ? parser.setting.getParentRadius()(node.nodeValue) : parser.setting.getChildRadius()(node.nodeValue);
@@ -319,6 +321,7 @@
             onRecalc: null,
             onFilter: null,
             setting: {
+                realtime: false,
                 onCalcRightBound: null,
                 skipEmptyDate: true
             }
@@ -385,9 +388,13 @@
             doProcessing(visTurn, dl, dr);
             try {
                 if (dl > processor.boundRange[1]) {
-                    killWorker();
-                    doFinished(dl, dr);
-                    throw new Error("break");
+                    if (!realtime) {
+                        killWorker();
+                        doFinished(dl, dr);
+                        throw new Error("break");
+                    } else {
+                        processor.pause();
+                    }
                 } else {
                     if ((!visTurn || !visTurn.length) && processor.setting.skipEmptyDate) {
                         tempTimeout = setTimeout(loop, 1);
@@ -892,6 +899,7 @@
             Object.defineProperty(bh.setting, "parentColors", makeGetterSetter(parser.setting, "parentColor"));
             Object.defineProperty(bh.setting, "categoryColors", makeGetterSetter(parser.setting, "childColor"));
             Object.defineProperty(bh.setting, "skipEmptyDate", makeGetterSetter(processor.setting, "skipEmptyDate"));
+            Object.defineProperty(bh.setting, "realtime", makeGetterSetter(processor.setting, "realtime"));
             Object.defineProperty(bh.setting, "blendingLighter", {
                 get: function() {
                     return render.setting.compositeOperation === "lighter";
@@ -916,6 +924,7 @@
         bh.setting.padding = 25;
         bh.setting.blendingLighter = true;
         bh.setting.hasLabelMaxWidth = true;
+        bh.setting.realtime = false;
         bh.on = function(key, value) {
             if (!key || !(typeof key === "string")) return bh;
             key = key.toLowerCase();
@@ -1194,7 +1203,7 @@
                 p.flash = 100;
                 p.visible = true;
             }
-            while (--l > -1) {
+            while (l--) {
                 n = d.nodes[l];
                 if (n.fixed && n !== selected) {
                     if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
@@ -1306,6 +1315,16 @@
             delete a.px;
             delete a.py;
         }
+        bh.append = function(data) {
+            if (!(data instanceof Array) || !nodes) return false;
+            incData = incData.concat(data);
+            nodes = nodes.concat(parser.nodes(data));
+            processor.IsRun() && processor.pause();
+            var bound = d3.extent(data.map(parser.setting.getGroupBy()));
+            processor.boundRange = [ processor.boundRange[0] > processor.boundRange[1] ? processor.boundRange[1] : processor.boundRange[0], bound[1] ];
+            processor.IsRun() && processor.resume();
+            return true;
+        };
         bh.start = function(inData, width, height, reInitData, callback) {
             restart = true;
             processor.killWorker();
@@ -1333,6 +1352,7 @@
                     nodes && nodes.splice(0);
                     var sort = bh.sort();
                     incData = isFun(sort) ? inData.sort(sort) : inData;
+                    parser.init();
                     parser.nodes(incData, function(newNodes) {
                         nodes = newNodes;
                         initCallback(w, h, callback);
