@@ -429,13 +429,20 @@ blackhole = function (node) {
     };
 
     function tick() {
-        if (restart)
+        if (restart) {
+            forceParent.stop();
+            forceChild.stop();
             return;
+        }
 
+        var haveVisible = false;
         if (forceChild.nodes()) {
-
+            var fn = cluster(bh.setting.alpha);
             forceChild.nodes()
-                .forEach(cluster(bh.setting.alpha));
+                .forEach(function(d) {
+                    fn(d);
+                    haveVisible = haveVisible || d.visible;
+                });
 
             forceParent.nodes(
                 forceParent.nodes()
@@ -443,8 +450,17 @@ blackhole = function (node) {
             );
         }
 
-        if (restart)
+        if (restart
+            || !(processor.IsRun()
+                 || haveVisible
+                 || (bh.setting.parentLife > 0
+                    && forceParent.nodes()
+                    && forceParent.nodes().length))) {
+            forceParent.stop();
+            forceChild.stop();
             return;
+        }
+
         forceParent.resume();
         forceChild.resume();
     }
@@ -619,7 +635,8 @@ blackhole = function (node) {
             n.fixed = false;//n === selected; //TODO bug when zooming. particle become frozen
 
             n.parent = p;
-            n.atTarget = false;
+            delete n.atTarget;
+            delete n.lr;
 
             n.visible = attachGetVisibleByStep()(d, n);
             fn = parser.setting.getChildKey()(n.nodeValue);
@@ -758,6 +775,8 @@ blackhole = function (node) {
         a.fixed = a.type == typeNode.child || a.permanentFixed;
         delete a.px;
         delete a.py;
+        delete a.atTarget;
+        delete a.lr;
     }
 
     /**

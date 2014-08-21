@@ -388,11 +388,12 @@
             doProcessing(visTurn, dl, dr);
             try {
                 if (dl > processor.boundRange[1]) {
-                    if (!realtime) {
+                    if (!processor.setting.realtime) {
                         killWorker();
                         doFinished(dl, dr);
                         throw new Error("break");
                     } else {
+                        processor.boundRange[0] = processor.boundRange[1];
                         processor.pause();
                     }
                 } else {
@@ -1097,12 +1098,25 @@
             return bh;
         };
         function tick() {
-            if (restart) return;
+            if (restart) {
+                forceParent.stop();
+                forceChild.stop();
+                return;
+            }
+            var haveVisible = false;
             if (forceChild.nodes()) {
-                forceChild.nodes().forEach(cluster(bh.setting.alpha));
+                var fn = cluster(bh.setting.alpha);
+                forceChild.nodes().forEach(function(d) {
+                    fn(d);
+                    haveVisible = haveVisible || d.visible;
+                });
                 forceParent.nodes(forceParent.nodes().filter(filterParentNodes));
             }
-            if (restart) return;
+            if (restart || !(processor.IsRun() || haveVisible || bh.setting.parentLife > 0 && forceParent.nodes() && forceParent.nodes().length)) {
+                forceParent.stop();
+                forceChild.stop();
+                return;
+            }
             forceParent.resume();
             forceChild.resume();
         }
@@ -1225,7 +1239,8 @@
                 n.size += 1;
                 n.fixed = false;
                 n.parent = p;
-                n.atTarget = false;
+                delete n.atTarget;
+                delete n.lr;
                 n.visible = attachGetVisibleByStep()(d, n);
                 fn = parser.setting.getChildKey()(n.nodeValue);
                 n.flash = 100;
@@ -1314,6 +1329,8 @@
             a.fixed = a.type == typeNode.child || a.permanentFixed;
             delete a.px;
             delete a.py;
+            delete a.atTarget;
+            delete a.lr;
         }
         bh.append = function(data) {
             if (!(data instanceof Array) || !nodes) return false;

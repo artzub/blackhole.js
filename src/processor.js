@@ -118,12 +118,12 @@ function Processor() {
 
         try {
             if (dl > processor.boundRange[1]) {
-                if (!realtime) {
+                if (!processor.setting.realtime) {
                     killWorker();
                     doFinished(dl, dr);
                     throw new Error("break");
                 } else {
-                    //processor.boundRange[0] = processor.boundRange[1];
+                    processor.boundRange[0] = processor.boundRange[1];
                     processor.pause();
                 }
             } else {
