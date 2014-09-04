@@ -450,12 +450,14 @@ blackhole = function (node) {
             );
         }
 
+        var checkParent = bh.setting.parentLife > 0
+            && forceParent.nodes()
+            && forceParent.nodes().length;
+
         if (restart
             || !(processor.IsRun()
                  || haveVisible
-                 || (bh.setting.parentLife > 0
-                    && forceParent.nodes()
-                    && forceParent.nodes().length))) {
+                 || checkParent)) {
             forceParent.stop();
             forceChild.stop();
             return;
@@ -795,7 +797,7 @@ blackhole = function (node) {
 
         var bound = d3.extent(data.map(parser.setting.getGroupBy()));
         processor.boundRange = [processor.boundRange[0] > processor.boundRange[1]
-            ? processor.boundRange[1]
+            ? processor.boundRange[1] + 1
             : processor.boundRange[0], bound[1]];
 
         processor.IsRun()
@@ -912,9 +914,11 @@ blackhole = function (node) {
         bh.style({
             position: "absolute",
             top: 0,
-            left: 0,
-            transform: 'translate3d(0px, 0px, 0px)'
+            left: 0
         });
+
+        var tf = bh.findStyleProperty(['transform', 'WebkitTransform', 'OTransform', 'MozTransform', 'msTransform']);
+        tf && bh.style(tf, 'translate3d(0px, 0px, 0px)');
 
         applyStyleWhenStart();
 
@@ -953,6 +957,17 @@ blackhole = function (node) {
 
     bh.getCanvas = function() {
         return canvas;
+    };
+
+    bh.findStyleProperty = function(props) {
+        var style = document.documentElement.style;
+
+        for (var i = 0; i < props.length; i++) {
+            if (props[i] in style) {
+                return props[i];
+            }
+        }
+        return false;
     };
 
     var hashStyle = document.createElement('canvas');

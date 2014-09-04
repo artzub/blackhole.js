@@ -393,8 +393,7 @@
                         doFinished(dl, dr);
                         throw new Error("break");
                     } else {
-                        processor.boundRange[0] = processor.boundRange[1];
-                        processor.pause();
+                        processor.boundRange[0] = processor.boundRange[1] + 1;
                     }
                 } else {
                     if ((!visTurn || !visTurn.length) && processor.setting.skipEmptyDate) {
@@ -1112,7 +1111,8 @@
                 });
                 forceParent.nodes(forceParent.nodes().filter(filterParentNodes));
             }
-            if (restart || !(processor.IsRun() || haveVisible || bh.setting.parentLife > 0 && forceParent.nodes() && forceParent.nodes().length)) {
+            var checkParent = bh.setting.parentLife > 0 && forceParent.nodes() && forceParent.nodes().length;
+            if (restart || !(processor.IsRun() || haveVisible || checkParent)) {
                 forceParent.stop();
                 forceChild.stop();
                 return;
@@ -1338,7 +1338,7 @@
             nodes = nodes.concat(parser.nodes(data));
             processor.IsRun() && processor.pause();
             var bound = d3.extent(data.map(parser.setting.getGroupBy()));
-            processor.boundRange = [ processor.boundRange[0] > processor.boundRange[1] ? processor.boundRange[1] : processor.boundRange[0], bound[1] ];
+            processor.boundRange = [ processor.boundRange[0] > processor.boundRange[1] ? processor.boundRange[1] + 1 : processor.boundRange[0], bound[1] ];
             processor.IsRun() && processor.resume();
             return true;
         };
@@ -1398,9 +1398,10 @@
             bh.style({
                 position: "absolute",
                 top: 0,
-                left: 0,
-                transform: "translate3d(0px, 0px, 0px)"
+                left: 0
             });
+            var tf = bh.findStyleProperty([ "transform", "WebkitTransform", "OTransform", "MozTransform", "msTransform" ]);
+            tf && bh.style(tf, "translate3d(0px, 0px, 0px)");
             applyStyleWhenStart();
             ctx = canvas.getContext("2d");
             forceChild = (forceChild || d3.layout.force().stop().size([ w, h ]).friction(.75).gravity(0).charge(function(d) {
@@ -1419,6 +1420,15 @@
         }
         bh.getCanvas = function() {
             return canvas;
+        };
+        bh.findStyleProperty = function(props) {
+            var style = document.documentElement.style;
+            for (var i = 0; i < props.length; i++) {
+                if (props[i] in style) {
+                    return props[i];
+                }
+            }
+            return false;
         };
         var hashStyle = document.createElement("canvas");
         bh.style = function(name, value, priority) {

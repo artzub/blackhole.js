@@ -123,8 +123,8 @@ function Processor() {
                     doFinished(dl, dr);
                     throw new Error("break");
                 } else {
-                    processor.boundRange[0] = processor.boundRange[1];
-                    processor.pause();
+                    processor.boundRange[0] = processor.boundRange[1] + 1;
+                    //processor.pause();
                 }
             } else {
                 if ((!visTurn || !visTurn.length) && processor.setting.skipEmptyDate) {

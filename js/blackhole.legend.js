@@ -13,7 +13,8 @@
                 parentNode : node || document.body,
                 setting : {
                     lengthOfCropName : 55,
-                    createTitle : false
+                    createTitle : false,
+                    counter : true
                 }
             }
             , categories
@@ -175,6 +176,8 @@
             if (!lLeg || lLeg.empty())
                 return;
 
+            var ec = that.setting.counter;
+
             gLeg = gLeg || lLeg.selectAll(".gLeg");
 
             function wl(d) {
@@ -183,15 +186,17 @@
 
             gLeg.selectAll(".gtLeg")
                 .text(wl)
+                .style('display', ec ? null : 'none')
             ;
 
-            var wb = d3.max(gLeg.selectAll(".gtLeg"), function(d) {
+            var wb = !ec ? 0 : d3.max(gLeg.selectAll(".gtLeg"), function(d) {
                 return d[0].clientWidth || d[0].getComputedTextLength();
             }) + 4;
 
             gLeg.selectAll("rect")
                 .style("fill", legColor)
                 .attr("width", wb)
+                .style('display', ec ? null : 'none')
             ;
 
             gLeg.selectAll(".gttLeg")
