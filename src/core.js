@@ -167,6 +167,7 @@ blackhole = function (node) {
     bh.setting.blendingLighter = true;
     bh.setting.hasLabelMaxWidth = true;
     bh.setting.realtime = false;
+    bh.setting.asyncParsing = false;
 
 
     bh.on = function(key, value) {
@@ -298,6 +299,10 @@ blackhole = function (node) {
         attachGetCreateNearParent.value = arg;
     }
     bh.on('getCreateNearParent', defaultGetCreateNearParent);
+
+    bh.on('getParentLabel', function(d) {
+        return d.nodeValue.name;
+    });
 
     ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode', 'particleattarget'].forEach(function(key) {
         hashOnAction[key] = func(hashOnAction, key);
@@ -859,10 +864,20 @@ blackhole = function (node) {
                 incData = isFun(sort) ? inData.sort(sort) : inData;
 
                 parser.init();
-                parser.nodes(incData, function (newNodes) {
-                    nodes = newNodes;
+                /**
+                 * WARNING!!!
+                 * If uses asyncParsing in true, then the time of parsing increases
+                 */
+                if (!bh.setting.asyncParsing) {
+                    nodes = parser.nodes(incData);
                     initCallback(w, h, callback);
-                });
+                }
+                else {
+                    parser.nodes(incData, function (newNodes) {
+                        nodes = newNodes;
+                        initCallback(w, h, callback);
+                    });
+                }
             }
             else {
                 initCallback(w, h, callback);

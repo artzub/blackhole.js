@@ -8,7 +8,7 @@ full: clean blackhole.js blackhole.min.js
 
 blackhole.js: $(sh node_modules/.bin/smash --ignore-missing --list src/blackhole.js)
 	rm -f $@
-	"node_modules/.bin/smash" src/blackhole.js | "node_modules/.bin/uglifyjs" - -b indent-level=4 -o $@
+	"node_modules/.bin/smash" src/blackhole.js | "node_modules/.bin/uglifyjs" - --comments -b indent-level=4 -o $@
 	chmod 777 $@
 
 blackhole.min.js: blackhole.js

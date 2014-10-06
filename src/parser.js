@@ -6,7 +6,6 @@ import "common";
  * @constructor
  */
 function Parser() {
-    var dispatch = d3.dispatch();
 
     var parser = {
             size : [500, 500]
@@ -51,7 +50,7 @@ function Parser() {
     (function() {
 
         var reg = new RegExp("^[get|on]");
-        d3.map(parser.setting).keys().forEach(function(key) {
+        d3.keys(parser.setting).forEach(function(key) {
             if (reg.test(key))
                 parser.setting[key] = func(parser.setting, key);
         });
@@ -258,8 +257,8 @@ function Parser() {
             return null;
 
         key = parser.setting.getParentKey()(parent);
-        if (!key)
-            return null;
+        if (typeof key === "undefined" || key == null)
+            key = "undefined";
 
         n = parser.parentHash.get(key);
 
@@ -280,6 +279,9 @@ function Parser() {
 
         key = parser.setting.getChildKey()(d);
 
+        if (typeof key === "undefined" || key == null)
+            key = "undefined";
+
         n = parser.childHash.get(key);
 
         if (!n) {
@@ -298,20 +300,34 @@ function Parser() {
     };
 
     parser.nodes = function(data, callback) {
+        console.time('parser');
         var ns = [];
 
         doBeforeParsing(data);
 
         if (isFun(callback)) {
+//            async.each(data,
+//                function (d, callback) {
+//                    parseNode(d, ns);
+//                    callback();
+//                },
+//                function(err) {
+//                    doAfterParsing(ns);
+//                    callback(ns);
+//                    console.timeEnd('parser');
+//                }
+//            )
             asyncForEach(data, function (d) {
                 parseNode(d, ns);
-            }, 10, function() {
+            }, 1, function(err) {
                 doAfterParsing(ns);
                 callback(ns);
-            })
+                console.timeEnd('parser');
+            });
         }
         else {
             parse(data, ns);
+            console.timeEnd('parser');
             return ns;
         }
     };

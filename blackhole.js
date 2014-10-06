@@ -1,3 +1,12 @@
+/**
+ * BlackHoleJS is a library for dynamic data visualization.
+ * Powered by http://d3js.org
+ * Copyright 2013-2014 Artem Zubkov
+ * @author: Artem Zubkov
+ * @email: artzub@gmail.com
+ * @license: MIT
+ * @source: http://github.com/artzub/blackhole.js
+ */
 "use strict";
 
 !function() {
@@ -27,15 +36,15 @@
     function isFun(a) {
         return typeof a === "function";
     }
-    function asyncForEach(items, fn, time, finishCallback) {
+    function asyncForEach(items, fn, time, callback) {
         if (!(items instanceof Array)) return;
         var workArr = items.reverse().concat();
         (function loop() {
             if (workArr.length > 0) {
                 fn(workArr.shift(), workArr);
                 setTimeout(loop, time || 10);
-            } else if (isFun(finishCallback)) {
-                finishCallback();
+            } else if (isFun(callback)) {
+                callback();
             }
         })();
     }
@@ -62,7 +71,6 @@
     var ONE_SECOND = 1e3, PI_CIRCLE = 2 * Math.PI;
     var layersCounter = 0;
     function Parser() {
-        var dispatch = d3.dispatch();
         var parser = {
             size: [ 500, 500 ],
             categoryMax: 0,
@@ -96,7 +104,7 @@
         }
         (function() {
             var reg = new RegExp("^[get|on]");
-            d3.map(parser.setting).keys().forEach(function(key) {
+            d3.keys(parser.setting).forEach(function(key) {
                 if (reg.test(key)) parser.setting[key] = func(parser.setting, key);
             });
             parser.setting.getName(function(d) {
@@ -225,7 +233,7 @@
             var parent, key, n;
             if (!d || !(parent = parser.setting.getParent()(d))) return null;
             key = parser.setting.getParentKey()(parent);
-            if (!key) return null;
+            if (typeof key === "undefined" || key == null) key = "undefined";
             n = parser.parentHash.get(key);
             if (!n) {
                 n = Node(parent, typeNode.parent);
@@ -237,6 +245,7 @@
             var key, n;
             if (!d) return null;
             key = parser.setting.getChildKey()(d);
+            if (typeof key === "undefined" || key == null) key = "undefined";
             n = parser.childHash.get(key);
             if (!n) {
                 n = Node(d, typeNode.child);
@@ -252,17 +261,20 @@
             parser.categoryMax = 0;
         };
         parser.nodes = function(data, callback) {
+            console.time("parser");
             var ns = [];
             doBeforeParsing(data);
             if (isFun(callback)) {
                 asyncForEach(data, function(d) {
                     parseNode(d, ns);
-                }, 10, function() {
+                }, 1, function(err) {
                     doAfterParsing(ns);
                     callback(ns);
+                    console.timeEnd("parser");
                 });
             } else {
                 parse(data, ns);
+                console.timeEnd("parser");
                 return ns;
             }
         };
@@ -925,6 +937,7 @@
         bh.setting.blendingLighter = true;
         bh.setting.hasLabelMaxWidth = true;
         bh.setting.realtime = false;
+        bh.setting.asyncParsing = false;
         bh.on = function(key, value) {
             if (!key || !(typeof key === "string")) return bh;
             key = key.toLowerCase();
@@ -1019,6 +1032,9 @@
             attachGetCreateNearParent.value = arg;
         }
         bh.on("getCreateNearParent", defaultGetCreateNearParent);
+        bh.on("getParentLabel", function(d) {
+            return d.nodeValue.name;
+        });
         [ "finished", "starting", "started", "mouseovernode", "mousemove", "mouseoutnode", "particleattarget" ].forEach(function(key) {
             hashOnAction[key] = func(hashOnAction, key);
         });
@@ -1370,10 +1386,15 @@
                     var sort = bh.sort();
                     incData = isFun(sort) ? inData.sort(sort) : inData;
                     parser.init();
-                    parser.nodes(incData, function(newNodes) {
-                        nodes = newNodes;
+                    if (!bh.setting.asyncParsing) {
+                        nodes = parser.nodes(incData);
                         initCallback(w, h, callback);
-                    });
+                    } else {
+                        parser.nodes(incData, function(newNodes) {
+                            nodes = newNodes;
+                            initCallback(w, h, callback);
+                        });
+                    }
                 } else {
                     initCallback(w, h, callback);
                 }

@@ -79,22 +79,24 @@
             , bh = d3.blackHole("#canvas-svg")
             , all
             , cur
+            , df = d3.time.format('%d-%m-%Y')
+            , pf = d3.format('%')
             ;
 
         function prints(items, l, r) {
             cur += items ? items.length : 0;
             uiStatus.text([
                 "items:",
-                (cur / all) * 100,
-                "% from:",
-                new Date(l).toDateString(),
+                pf(cur / all),
+                " from:",
+                df(new Date(l)),
                 " to:",
-                new Date(r).toDateString()
+                df(new Date(r))
             ].join(''));
         }
 
         function printm() {
-            console.log("m", [].slice.call(arguments));
+            //console.log("m", [].slice.call(arguments));
         }
 
         var stepDate = 24 * 60 * 60 * 1000;
@@ -113,7 +115,10 @@
                     uiStatus.text("Start...");
                     cur = 0;
             })
-            .on('started', function() { uiStatus.text("Run..."); })
+            .on('started', function() {
+                    uiStatus.text("Run...");
+                    cur = 0;
+            })
             .on('processing', prints)
             //.on('processed', prints)
             .on('parsing', function() {
@@ -127,6 +132,7 @@
             })
         ;
         bh.setting.drawTrack = true;
+        bh.setting.asyncParsing = true;
         bh.style('background', "#000");
 
         function chch(d) {
@@ -135,7 +141,7 @@
 
         d3.select("#bh-setting")
                 .selectAll("li")
-                .data(d3.map(bh.setting).keys().filter(function(d) {
+                .data(d3.keys(bh.setting).filter(function(d) {
                     var val = bh.setting[d];
                     return typeof val === "boolean";
                 }))

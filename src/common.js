@@ -42,9 +42,9 @@ function isFun(a) {
  * @param {Array} items
  * @param {Function} fn
  * @param {Number} time
- * @param {Function} finishCallback
+ * @param {Function} callback
  */
-function asyncForEach(items, fn, time, finishCallback) {
+function asyncForEach(items, fn, time, callback) {
     if (!(items instanceof Array))
         return;
 
@@ -55,8 +55,8 @@ function asyncForEach(items, fn, time, finishCallback) {
             fn(workArr.shift(), workArr);
             setTimeout(loop, time || 10);
         }
-        else if (isFun(finishCallback)) {
-            finishCallback();
+        else if (isFun(callback)) {
+            callback();
         }
     })();
 }
