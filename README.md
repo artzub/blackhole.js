@@ -225,41 +225,41 @@ bh.setting
     > ***key*** — string value form __keys__  
     > ***value*** — function  
 
-    key | value | description
-    -------------------------
-    __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> |  | 
-    __[processing](#on-processing)__<a name="on-processing" /> |  | 
-    __[processed](#on-processed)__<a name="on-processed" /> |  | 
-    __[stopped](#on-stopped)__<a name="on-stopped" /> |  | 
-    __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> |  | 
-    __[parsing](#on-parsing)__<a name="on-parsing" /> |  | 
-    __[afterParsing](#on-after-parsing)__<a name="on-after-parsing" /> |  | 
-    __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> |  | 
-    __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> |  | 
-    __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> |  | 
-    __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> |  | 
-    __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> |  | 
-    __[getName](#on-get-name)__<a name="on-get-name" /> |  | 
-    __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> |  | 
-    __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> |  | 
-    __[getKey](#on-get-key)__<a name="on-get-key" /> |  | 
-    __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> |  | 
-    __[getParentKey](#on-get-parent-key)__<a name="on-get-parent-key" /> |  | 
-    __[getParent](#on-get-parent)__<a name="on-get-parent" /> |  | 
-    __[getParentImage](#on-get-parent-image)__<a name="on-get-parent-image" /> |  | 
-    __[getGroupBy](#on-get-group-by)__<a name="on-get-group-by" /> |  | 
-    __[getValue](#on-get-value)__<a name="on-get-value" /> |  | 
-    __[getParentRadius](#on-get-parent-radius)__<a name="on-get-parent-radius" /> |  | 
-    __[getChildRadius](#on-get-child-radius)__<a name="on-get-child-radius" /> |  | 
-    __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> |  | 
-    __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> |  | 
-    __[finished](#on-finished)__<a name="on-finished" /> |  | 
-    __[starting](#on-starting)__<a name="on-starting" /> |  | 
-    __[started](#on-started)__<a name="on-started" /> |  | 
-    __[mouseOverNode](#on-mouse-over-node)__<a name="on-mouse-over-node" /> |  | 
-    __[mouseMove](#on-mouse-move)__<a name="on-mouse-move" /> |  | 
-    __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> |  | 
-    __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> |  | 
+    |  key  | value | description |
+    | ----- | ----- | ----------- |
+    | __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> |  |  |
+    | __[processing](#on-processing)__<a name="on-processing" /> |  |  |
+    | __[processed](#on-processed)__<a name="on-processed" /> |  |  |
+    | __[stopped](#on-stopped)__<a name="on-stopped" /> |  |  |
+    | __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> |  |  |
+    | __[parsing](#on-parsing)__<a name="on-parsing" /> |  |  |
+    | __[afterParsing](#on-after-parsing)__<a name="on-after-parsing" /> |  |  |
+    | __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> |  |  |
+    | __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> |  |  |
+    | __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> |  |  |
+    | __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> |  |  |
+    | __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> |  |  |
+    | __[getName](#on-get-name)__<a name="on-get-name" /> |  |  |
+    | __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> |  |  |
+    | __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> |  |  |
+    | __[getKey](#on-get-key)__<a name="on-get-key" /> |  |  |
+    | __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> |  |  |
+    | __[getParentKey](#on-get-parent-key)__<a name="on-get-parent-key" /> |  |  |
+    | __[getParent](#on-get-parent)__<a name="on-get-parent" /> |  |  |
+    | __[getParentImage](#on-get-parent-image)__<a name="on-get-parent-image" /> |  |  |
+    | __[getGroupBy](#on-get-group-by)__<a name="on-get-group-by" /> |  |  |
+    | __[getValue](#on-get-value)__<a name="on-get-value" /> |  |  |
+    | __[getParentRadius](#on-get-parent-radius)__<a name="on-get-parent-radius" /> |  |  |
+    | __[getChildRadius](#on-get-child-radius)__<a name="on-get-child-radius" /> |  |  |
+    | __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> |  |  |
+    | __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> |  |  |
+    | __[finished](#on-finished)__<a name="on-finished" /> |  |  |
+    | __[starting](#on-starting)__<a name="on-starting" /> |  |  |
+    | __[started](#on-started)__<a name="on-started" /> |  |  |
+    | __[mouseOverNode](#on-mouse-over-node)__<a name="on-mouse-over-node" /> |  |  |
+    | __[mouseMove](#on-mouse-move)__<a name="on-mouse-move" /> |  |  |
+    | __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> |  |  |
+    | __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> |  |  |
     
 <a name="fd" />
 ## For developers
