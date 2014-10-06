@@ -118,8 +118,8 @@ For creation instance of the blackHole object, need call method of the d3js obje
 ```javascript
 var bh = d3.blackHole('#canvas');
 ```
-__d3.blackHole__```= function (node) {}```  
-> __node__ — or a selector, or a dom node, or a d3 node
+__d3.blackHole(node)__  
+> __node__ — or a selector, or a dom node, or a d3 node  
 > returning the blackHole object
 
 will further describe the properties and methods of the blackHole object.
@@ -132,9 +132,9 @@ will further describe the properties and methods of the blackHole object.
 ### Settings
 
 All fields can change dynamic.  
-Access to settings fields is
+Access to settings
 ```javascript
-bh.setting.
+bh.setting
 ```
 
 * #### Items
@@ -154,6 +154,8 @@ bh.setting.
         > If param is true, then will work method [.on('parsing')](#on_parsing)  
         > *This parameters must be initialized before starting visualization.*  
     * __speed__ — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
+        > *This parameters must be initialized before starting visualization.*  
+        > After need use [speed](#speed) method
     * __increaseChildWhenCreated__ — increase children nodes when they are created (default: `false`)
     * __createNearParent__ — create children nodes near they parents (default: `false`)
 
@@ -188,70 +190,76 @@ bh.setting.
 
 ### Methods
 
-* __.IsRun__
-* __.IsPaused__
-* __.stop__
-* __.pause__
-* __.resume__
-* __.selectNode__
-* __.selectCategory__
-* __.frozenCategory__
-* __.parents__
-* __.children__
-* __.categories__
-* __.categoryMax__
-* __.sort__
-* __.filter__
-* __.speed__
-* __.append__
-* __.start__
+* __[start](#start)()__<a name="start" />
+* __[stop](#stop)()__<a name="stop" />
+* __[pause](#pause)()__<a name="pause" />
+* __[resume](#resume)()__<a name="resume" />
+* __[append](#append)()__<a name="append" />
+* __[IsRun](#is-run)()__<a name="is-run" />
+* __[IsPaused](#is-paused)()__<a name="is-paused" />
 
-### Style
-* __.size__
-* __.translate__
-* __.style__``` = function(name, value, priority) {}```
-* __.scale__
-* __.getCanvas__
-* __.findStyleProperty__
-* __.on__``` = function(key, value) {...}```    
+* __[selectNode](#select-node)(node)__<a name="select-node" />
+* __[selectCategory](#select-category)(category)__<a name="select-category" />
+* __[frozenCategory](#frozen-category)(category)__<a name="frozen-category" />
+
+* __[parents](#parents)(arg)__<a name="parents" />
+* __[children](#children)(arg)__<a name="children" />
+* __[categories](#categories)(arg)__<a name="categories" />
+* __[categoryMax](#category-max)(val)__<a name="category-max" />
+
+* __[sort](#sort)(func)__<a name="sort" />
+    > function(a, b){}  
+* __[filter](#filter)(func)__<a name="filter" />
+    > function(l, r){}  
+
+* __[speed](#speed)(millisecond)__<a name="speed" />
+* __[size](#size)__<a name="size" />
+* __[translate](#translate)__<a name="translate" />
+* __[style](#style)(name, value, priority)__<a name="style" />
+* __[scale](#scale)__<a name="scale" />
+* __[getCanvas](#get-canvas)__<a name="get-canvas" />
+* __[findStyleProperty](#find-style-property)()__<a name="find-style-property" />
+
+* __[on](#on)(key, value)__<a name="on" />  
 
     > ***key*** — string value form __keys__  
     > ***value*** — function  
 
-    *keys*:  
-    - __calcrightbound__
-    - __processing__
-    - __processed__
-    - __stopped__
-    - __beforeparsing__
-    - __parsing__<a name="on_parsing" />
-    - __afterparsing__
-    - __getchildlabel__
-    - __getparentlabel__
-    - __getselectedcolor__
-    - __getvisiblebystep__
-    - __getcreatenearparent__
-    - __getname__
-    - __getcategorykey__
-    - __getcategoryname__
-    - __getkey__
-    - __getchildkey__
-    - __getparentkey__
-    - __getparent__
-    - __getparentimage__
-    - __getgroupby__
-    - __getvalue__
-    - __getparentradius__
-    - __getchildradius__
-    - __getparentposition__
-    - __getparentfixed__
-    - __finished__
-    - __starting__
-    - __started__
-    - __mouseovernode__
-    - __mousemove__
-    - __mouseoutnode__
-    - __particleattarget__
+    key | value | description
+    -------------------------
+    __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> |  | 
+    __[processing](#on-processing)__<a name="on-processing" /> |  | 
+    __[processed](#on-processed)__<a name="on-processed" /> |  | 
+    __[stopped](#on-stopped)__<a name="on-stopped" /> |  | 
+    __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> |  | 
+    __[parsing](#on-parsing)__<a name="on-parsing" /> |  | 
+    __[afterParsing](#on-after-parsing)__<a name="on-after-parsing" /> |  | 
+    __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> |  | 
+    __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> |  | 
+    __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> |  | 
+    __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> |  | 
+    __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> |  | 
+    __[getName](#on-get-name)__<a name="on-get-name" /> |  | 
+    __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> |  | 
+    __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> |  | 
+    __[getKey](#on-get-key)__<a name="on-get-key" /> |  | 
+    __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> |  | 
+    __[getParentKey](#on-get-parent-key)__<a name="on-get-parent-key" /> |  | 
+    __[getParent](#on-get-parent)__<a name="on-get-parent" /> |  | 
+    __[getParentImage](#on-get-parent-image)__<a name="on-get-parent-image" /> |  | 
+    __[getGroupBy](#on-get-group-by)__<a name="on-get-group-by" /> |  | 
+    __[getValue](#on-get-value)__<a name="on-get-value" /> |  | 
+    __[getParentRadius](#on-get-parent-radius)__<a name="on-get-parent-radius" /> |  | 
+    __[getChildRadius](#on-get-child-radius)__<a name="on-get-child-radius" /> |  | 
+    __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> |  | 
+    __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> |  | 
+    __[finished](#on-finished)__<a name="on-finished" /> |  | 
+    __[starting](#on-starting)__<a name="on-starting" /> |  | 
+    __[started](#on-started)__<a name="on-started" /> |  | 
+    __[mouseOverNode](#on-mouse-over-node)__<a name="on-mouse-over-node" /> |  | 
+    __[mouseMove](#on-mouse-move)__<a name="on-mouse-move" /> |  | 
+    __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> |  | 
+    __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> |  | 
     
 <a name="fd" />
 ## For developers
