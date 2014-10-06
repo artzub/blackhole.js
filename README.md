@@ -20,11 +20,14 @@ Depends of [D3js](http://d3js.org)
 
 ## Structure
 
-- [QuickExample](#qx)
+- [Quick Example](#qe)
 - [Documentation](#api)
+    - [Properties](#Properties)
+    - [Settings](#Settings)
+    - [Methods](#Methods)
 - [For developers](#fd)
 
-<a name="qx" />
+<a name="qe" />
 ## Quick Examples
   
 
@@ -111,11 +114,114 @@ d3bh.on('calcRightBound', function(l) {
 <a name="api" />
 ## Documentation
 
+### Properties
+
+* __version__
+* __setting__
+
 ### Settings
 
-### Method __On__
+* __alpha__
+* __childLife__
+* __parentLife__
+* __edgeLife__
+* __rateOpacity__
+* __rateFlash__
+* __blendingLighter__
+* __increaseChildWhenCreated__
+* __createNearParent__
+* __zoomAndDrag__
+* __zoom__
+* __scale__
+* __translate__
+* __scaleExtent__
+* __colorless__
+* __colorlessFlash__
+* __drawEdge__
+* __drawChild__
+* __drawChildLabel__
+* __drawParent__
+* __drawParentLabel__
+* __drawPaddingCircle__
+* __drawHalo__
+* __drawTrack__
+* __drawVanishingTail__
+* __drawAsPlasma__
+* __drawParentImg__
+* __lengthTrack__
+* __padding__
+* __parentColors__
+* __categoryColors__
+* __skipEmptyDate__
+* __realtime__
+* __hasLabelMaxWidth__
+* __asyncParsing__
 
+### Methods
 
+* __.IsRun__
+* __.IsPaused__
+* __.stop__
+* __.pause__
+* __.resume__
+* __.selectNode__
+* __.selectCategory__
+* __.frozenCategory__
+* __.parents__
+* __.children__
+* __.categories__
+* __.categoryMax__
+* __.sort__
+* __.filter__
+* __.speed__
+* __.size__
+* __.translate__
+* __.scale__
+* __.append__
+* __.start__
+* __.getCanvas__
+* __.findStyleProperty__
+* __.style__
+* __.on__ = function(key, value) {...}  
+
+    > ***key*** — string value form __keys__  
+    > ***value*** — function  
+
+    *keys*:  
+    - __calcrightbound__
+    - __processing__
+    - __processed__
+    - __stopped__
+    - __beforeparsing__
+    - __parsing__
+    - __afterparsing__
+    - __getchildlabel__
+    - __getparentlabel__
+    - __getselectedcolor__
+    - __getvisiblebystep__
+    - __getcreatenearparent__
+    - __getname__
+    - __getcategorykey__
+    - __getcategoryname__
+    - __getkey__
+    - __getchildkey__
+    - __getparentkey__
+    - __getparent__
+    - __getparentimage__
+    - __getgroupby__
+    - __getvalue__
+    - __getparentradius__
+    - __getchildradius__
+    - __getparentposition__
+    - __getparentfixed__
+    - __finished__
+    - __starting__
+    - __started__
+    - __mouseovernode__
+    - __mousemove__
+    - __mouseoutnode__
+    - __particleattarget__
+    
 <a name="fd" />
 ## For developers
 
