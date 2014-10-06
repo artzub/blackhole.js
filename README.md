@@ -132,61 +132,67 @@ will further describe the properties and methods of the blackHole object.
 ### Settings
 
 All fields can change dynamic.  
-Access to settings
-```javascript
-bh.setting
-```
 
 * #### Items
-    * __alpha__ — uses for calculation cluster (default: `0.025`)
-    * __childLife__ — number of ticks of life a child node (default: `255`)
-    * __parentLife__ — number of ticks of life a parent node, after the death of all children (default: `255`)
-    * __rateOpacity__ — rate of decrease of opacity (default: `.5`)
-    * __rateFlash__ — rate of decrease of flash effect (default: `2.5`)
-    * __padding__ — padding of parent (default: `25`)
+    * *bh.setting.*__alpha__ — uses for calculation cluster (default: `0.025`)
+    * *bh.setting.*__childLife__ — number of ticks of life a child node (default: `255`)
+    * *bh.setting.*__parentLife__ — number of ticks of life a parent node, after the death of all children (default: `255`)
+    * *bh.setting.*__rateOpacity__ — rate of decrease of opacity (default: `.5`)
+    * *bh.setting.*__rateFlash__ — rate of decrease of flash effect (default: `2.5`)
+    * *bh.setting.*__padding__ — padding of parent (default: `25`)
 
 * #### Behavior
-    * __skipEmptyDate__ — skips empty dates (default: `true`).  
-        > if after filtering data, an array is empty then it steps on next date.   
-    * __realtime__ — indicates that need work in mode realtime (default: `false`).   
-        > *This parameters must be initialized before starting visualization.*  
-    * __asyncParsing__ — parsing data in async mode (default: `false`).  
+    * *bh.setting.*__skipEmptyDate__ — skips empty dates (default: `true`).  
+        
+        > if after filtering data, an array is empty then it steps on next date.
+           
+    * *bh.setting.*__realtime__ — indicates that need work in mode realtime (default: `false`).
+       
+        > *This parameters must be initialized before starting visualization.*
+          
+    * *bh.setting.*__asyncParsing__ — parsing data in async mode (default: `false`).
+      
         > If param is true, then will work method [.on('parsing')](#on_parsing)  
-        > *This parameters must be initialized before starting visualization.*  
-    * __speed__ — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
+        > *This parameters must be initialized before starting visualization.* 
+         
+    * *bh.setting.*__speed__ — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
+        
         > *This parameters must be initialized before starting visualization.*  
         > After need use [speed](#speed) method
-    * __increaseChildWhenCreated__ — increase children nodes when they are created (default: `false`)
-    * __createNearParent__ — create children nodes near they parents (default: `false`)
+        
+    * *bh.setting.*__increaseChildWhenCreated__ — increase children nodes when they are created (default: `false`)
+    * *bh.setting.*__createNearParent__ — create children nodes near they parents (default: `false`)
 
 * #### Drawing
-    * __blendingLighter__ — if true, then sets the property `compositeOperation` of canvas in the `'lighter'` value (default: `true`)
-    * __drawEdge__ — drawing edges (default: `false`)
-    * __drawChild__ — drawing children nodes (default: `true`)
-    * __drawChildLabel__ — drawing labels of children nodes (default: `false`)
-    * __drawParent__ — drawing parents nodes (default: `true`)
-    * __drawParentLabel__ — drawing labels of parents nodes (default: `true`) 
-    * __drawPaddingCircle__ — drawing padding circles of parents nodes (default: `false`) 
-    * __drawHalo__ — drawing the halo effect of children nodes (default: `true`)
-    * __drawTrack__ — drawing track of children nodes (default: `true`)
-    * __drawAsPlasma__ — drawing children nodes uses plasma effect (default: `true`)
-    * __drawParentImg__ — drawing images of parents nodes (default: `true`) 
-    * __hasLabelMaxWidth__ — if true, then uses the `maxWidth` argument into the `fillText` method, in other words, text zooming based on the max width of canvas. (default: `true`) 
+    * *bh.setting.*__blendingLighter__ — if true, then sets the property `compositeOperation` of canvas in the `'lighter'` value (default: `true`)
+    * *bh.setting.*__drawEdge__ — drawing edges (default: `false`)
+    * *bh.setting.*__drawChild__ — drawing children nodes (default: `true`)
+    * *bh.setting.*__drawChildLabel__ — drawing labels of children nodes (default: `false`)
+    * *bh.setting.*__drawParent__ — drawing parents nodes (default: `true`)
+    * *bh.setting.*__drawParentLabel__ — drawing labels of parents nodes (default: `true`) 
+    * *bh.setting.*__drawPaddingCircle__ — drawing padding circles of parents nodes (default: `false`) 
+    * *bh.setting.*__drawHalo__ — drawing the halo effect of children nodes (default: `true`)
+    * *bh.setting.*__drawTrack__ — drawing track of children nodes (default: `true`)
+    * *bh.setting.*__drawAsPlasma__ — drawing children nodes uses plasma effect (default: `true`)
+    * *bh.setting.*__drawParentImg__ — drawing images of parents nodes (default: `true`) 
+    * *bh.setting.*__hasLabelMaxWidth__ — if true, then uses the `maxWidth` argument into the `fillText` method, in other words, text zooming based on the max width of canvas. (default: `true`) 
 
 * #### Colors
-    * __colorless__ — a color for bleaching (default: `rgb(128, 128, 128)`)
-    * __colorlessFlash__ — a color for bleaching when using the flash effect (default: `rgb(211, 211, 211)`)
-    * __parentColors__ — colors of parents nodes (default: `d3.scale.category20b()`)  
+    * *bh.setting.*__colorless__ — a color for bleaching (default: `rgb(128, 128, 128)`)
+    * *bh.setting.*__colorlessFlash__ — a color for bleaching when using the flash effect (default: `rgb(211, 211, 211)`)
+    * *bh.setting.*__parentColors__ — colors of parents nodes (default: `d3.scale.category20b()`)
+    
         > it is a `d3.scale.ordinal` object, can initialised as `d3.scale.ordinal.domain(['pie', 'roll', ...]).range(['red', 'blue', ...])`  
-        > [more about d3 category](https://github.com/mbostock/d3/blob/master/src/scale/category.js)  
-    * __categoryColors__ — colors of children nodes categories (default: `d3.scale.category20()`)
+        > [more about d3 category](https://github.com/mbostock/d3/blob/master/src/scale/category.js)
+          
+    * *bh.setting.*__categoryColors__ — colors of children nodes categories (default: `d3.scale.category20()`)
 
 * #### Zoom and drag
-    * __zoomAndDrag__ — enable zooming and dragging canvas (default: `true`)
-    * __zoom__ — a function `d3.zoom` (default: ~~generate when start visualization~~)
-    * __scale__ — initial `scale` of canvas (default: `1`)
-    * __translate__ — initial `translate` of canvas (default: `[0, 0]`)
-    * __scaleExtent__ — scale extent for `d3.zoom` (default: `[.1, 8]`)
+    * *bh.setting.*__zoomAndDrag__ — enable zooming and dragging canvas (default: `true`)
+    * *bh.setting.*__zoom__ — a function `d3.zoom` (default: ~~generate when start visualization~~)
+    * *bh.setting.*__scale__ — initial `scale` of canvas (default: `1`)
+    * *bh.setting.*__translate__ — initial `translate` of canvas (default: `[0, 0]`)
+    * *bh.setting.*__scaleExtent__ — scale extent for `d3.zoom` (default: `[.1, 8]`)
 
 ### Methods
 
