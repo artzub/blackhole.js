@@ -114,3 +114,5 @@ d3bh.on('calcRightBound', function(l) {
 
 <a name="fd" />
 ## For developers
+
+![ga](http://www.google-analytics.com/__utm.gif?utmac=UA-28343295-16&utmdt=blackholeReadme&utmhid=2052327202&utmn=1)
