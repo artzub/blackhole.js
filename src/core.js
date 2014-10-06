@@ -144,6 +144,7 @@ blackhole = function (node) {
         Object.defineProperty(bh.setting, 'categoryColors', makeGetterSetter(parser.setting, 'childColor'));
         Object.defineProperty(bh.setting, 'skipEmptyDate', makeGetterSetter(processor.setting, 'skipEmptyDate'));
         Object.defineProperty(bh.setting, 'realtime', makeGetterSetter(processor.setting, 'realtime'));
+        Object.defineProperty(bh.setting, 'speed', makeGetterSetter(processor.setting, 'step'));
         Object.defineProperty(bh.setting, 'blendingLighter', {
             get : function() { return render.setting.compositeOperation === 'lighter'; },
             set : function(value) { render.setting.compositeOperation = value === true ? 'lighter' : 'source-over'; },
@@ -181,7 +182,7 @@ blackhole = function (node) {
     };
 
     (function() {
-        hashOnAction['calcrightbound'] = processor.setting.onCalcRightBound;
+        hashOnAction['calcrightbound'] = processor.onCalcRightBound;
         hashOnAction['processing'] = processor.onProcessing;
         hashOnAction['processed'] = processor.onProcessed;
         hashOnAction['stopped'] = processor.onStopped;

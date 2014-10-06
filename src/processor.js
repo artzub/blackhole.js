@@ -11,7 +11,6 @@ function Processor() {
         , worker
         , tempTimeout
         ;
-
     var step = ONE_SECOND;
 
     var processor = {
@@ -24,19 +23,15 @@ function Processor() {
         , onProcessed : null
         , onRecalc : null
         , onFilter : null
+        , onCalcRightBound : null
         , setting : {
-            realtime : false,
-            onCalcRightBound : null,
-            skipEmptyDate : true
+            realtime : false
+            , skipEmptyDate : true
+            , step : step
         }
     };
 
-    // Initialize events functions
-    d3.map(processor.setting).keys().forEach(function(key) {
-        processor.setting[key] = func(processor.setting, key);
-    });
-
-    d3.map(processor).keys().forEach(function(key) {
+    d3.keys(processor).forEach(function(key) {
         if (/^on/.test(key))
             processor[key] = func(processor, key);
     });
@@ -62,7 +57,7 @@ function Processor() {
     }
 
     function doCalcRightBound (dl) {
-        return getFun(processor.setting, "onCalcRightBound")(dl);
+        return getFun(processor, "onCalcRightBound")(dl);
     }
 
     function doFinished(dl, dr) {
@@ -144,7 +139,7 @@ function Processor() {
     processor.step = function(arg) {
         if (!arguments.length || arg === undefined || arg == null || arg < 0)
             return step;
-        step = arg;
+        processor.setting.step = step = arg;
 
         if (processor.IsRun()) {
             killWorker();
@@ -156,6 +151,7 @@ function Processor() {
 
     processor.start = function() {
         stop = pause = false;
+        step = processor.setting.step;
         killWorker();
 
         doStarted();

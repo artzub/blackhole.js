@@ -11,7 +11,7 @@
 
 !function() {
     var blackhole = {
-        version: "0.0.5"
+        version: "1.0.0"
     };
     (function() {
         var lastTime = 0;
@@ -332,16 +332,14 @@
             onProcessed: null,
             onRecalc: null,
             onFilter: null,
+            onCalcRightBound: null,
             setting: {
                 realtime: false,
-                onCalcRightBound: null,
-                skipEmptyDate: true
+                skipEmptyDate: true,
+                step: step
             }
         };
-        d3.map(processor.setting).keys().forEach(function(key) {
-            processor.setting[key] = func(processor.setting, key);
-        });
-        d3.map(processor).keys().forEach(function(key) {
+        d3.keys(processor).forEach(function(key) {
             if (/^on/.test(key)) processor[key] = func(processor, key);
         });
         function killWorker() {
@@ -361,7 +359,7 @@
             return doFunc("onFilter")(dl, dr);
         }
         function doCalcRightBound(dl) {
-            return getFun(processor.setting, "onCalcRightBound")(dl);
+            return getFun(processor, "onCalcRightBound")(dl);
         }
         function doFinished(dl, dr) {
             doFunc("onFinished")(dl, dr);
@@ -418,7 +416,7 @@
         }
         processor.step = function(arg) {
             if (!arguments.length || arg === undefined || arg == null || arg < 0) return step;
-            step = arg;
+            processor.setting.step = step = arg;
             if (processor.IsRun()) {
                 killWorker();
                 worker = setInterval(loop, step);
@@ -427,6 +425,7 @@
         };
         processor.start = function() {
             stop = pause = false;
+            step = processor.setting.step;
             killWorker();
             doStarted();
             worker = setInterval(loop, step);
@@ -912,6 +911,7 @@
             Object.defineProperty(bh.setting, "categoryColors", makeGetterSetter(parser.setting, "childColor"));
             Object.defineProperty(bh.setting, "skipEmptyDate", makeGetterSetter(processor.setting, "skipEmptyDate"));
             Object.defineProperty(bh.setting, "realtime", makeGetterSetter(processor.setting, "realtime"));
+            Object.defineProperty(bh.setting, "speed", makeGetterSetter(processor.setting, "step"));
             Object.defineProperty(bh.setting, "blendingLighter", {
                 get: function() {
                     return render.setting.compositeOperation === "lighter";
@@ -946,7 +946,7 @@
             return bh;
         };
         (function() {
-            hashOnAction["calcrightbound"] = processor.setting.onCalcRightBound;
+            hashOnAction["calcrightbound"] = processor.onCalcRightBound;
             hashOnAction["processing"] = processor.onProcessing;
             hashOnAction["processed"] = processor.onProcessed;
             hashOnAction["stopped"] = processor.onStopped;

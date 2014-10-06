@@ -116,46 +116,57 @@ d3bh.on('calcRightBound', function(l) {
 
 ### Properties
 
-* __version__
-* __setting__
+* __version__ — the version of library
+* __setting__ — object with fields of [settings](#settings)
 
 ### Settings
 
-* __alpha__
-* __childLife__
-* __parentLife__
-* __edgeLife__
-* __rateOpacity__
-* __rateFlash__
-* __blendingLighter__
-* __increaseChildWhenCreated__
-* __createNearParent__
-* __zoomAndDrag__
-* __zoom__
-* __scale__
-* __translate__
-* __scaleExtent__
-* __colorless__
-* __colorlessFlash__
-* __drawEdge__
-* __drawChild__
-* __drawChildLabel__
-* __drawParent__
-* __drawParentLabel__
-* __drawPaddingCircle__
-* __drawHalo__
-* __drawTrack__
-* __drawVanishingTail__
-* __drawAsPlasma__
-* __drawParentImg__
-* __lengthTrack__
-* __padding__
-* __parentColors__
-* __categoryColors__
-* __skipEmptyDate__
-* __realtime__
-* __hasLabelMaxWidth__
-* __asyncParsing__
+* #### Items
+    * __alpha__ — uses for calculation cluster (default: 0.025)
+    * __childLife__ — number of ticks of life a child node (default: 255)
+    * __parentLife__ — number of ticks of life a parent node, after the death of all children (default: 255)
+    * __rateOpacity__ — rate of decrease of opacity (default: .5)
+    * __rateFlash__ — rate of decrease of flash effect (default: 2.5)
+    * __padding__ — padding of parent (default: 25)
+
+* #### Behavior
+    * __skipEmptyDate__ — skips empty dates (default: true). 
+        > *if after filtering data, an array is empty then it steps on next date.* 
+    * __realtime__ — indicates that need work in mode realtime (default: false). 
+        > *This parameters must be initialized before starting visualization.* 
+    * __asyncParsing__ — parsing data in async mode (default: false). 
+        > If param is true, then will work method [.on('parsing')](#on_parsing)
+        > *This parameters must be initialized before starting visualization.*
+    * __speed__ — sets milliseconds for setInterval of method filtering data (default: 1000)
+    * __increaseChildWhenCreated__ — increase children nodes when they are created (default: false)
+    * __createNearParent__ — create children nodes near they parents (default: false)
+
+* #### Drawing
+    * __blendingLighter__ — if true, then sets the property canvas compositeOperation in the 'lighter' value (default: true)
+    * __drawEdge__ — drawing edges (default: false)
+    * __drawChild__ — drawing children nodes (default: true)
+    * __drawChildLabel__ — drawing labels of children nodes (default: false)
+    * __drawParent__ — drawing parents nodes (default: true)
+    * __drawParentLabel__ — drawing labels of parents nodes (default: true) 
+    * __drawPaddingCircle__ — drawing padding circles of parents nodes (default: false) 
+    * __drawHalo__ — drawing the halo effect of children nodes (default: true)
+    * __drawTrack__ — drawing track of children nodes (default: true)
+    * __drawAsPlasma__ — drawing children nodes uses plasma effect (default: true)
+    * __drawParentImg__ — drawing images of parents nodes (default: true) 
+    * __hasLabelMaxWidth__ — if true, then uses the maxWidth argument into the fillText method, in other words, text zooming based on the max width of canvas. (default: true) 
+
+* #### Colors
+    * __colorless__ — 
+    * __colorlessFlash__ — 
+    * __parentColors__ — 
+    * __categoryColors__ — 
+
+* #### Zoom and drag
+    * __zoomAndDrag__ — 
+    * __zoom__ — 
+    * __scale__ — 
+    * __translate__ — 
+    * __scaleExtent__ — 
 
 ### Methods
 
@@ -174,15 +185,17 @@ d3bh.on('calcRightBound', function(l) {
 * __.sort__
 * __.filter__
 * __.speed__
-* __.size__
-* __.translate__
-* __.scale__
 * __.append__
 * __.start__
+
+### Style
+* __.size__
+* __.translate__
+* __.style__``` = function(name, value, priority) {}```
+* __.scale__
 * __.getCanvas__
 * __.findStyleProperty__
-* __.style__
-* __.on__ = function(key, value) {...}  
+* __.on__``` = function(key, value) {...}```    
 
     > ***key*** — string value form __keys__  
     > ***value*** — function  
@@ -193,7 +206,7 @@ d3bh.on('calcRightBound', function(l) {
     - __processed__
     - __stopped__
     - __beforeparsing__
-    - __parsing__
+    - __parsing__<a name="on_parsing" />
     - __afterparsing__
     - __getchildlabel__
     - __getparentlabel__
