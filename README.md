@@ -3,7 +3,7 @@ blackHole.js
 
 ## Introduce
 
-![Blackhole.js](http://i.imgur.com/6d588zV.png)
+[![Blackhole.js](http://i.imgur.com/6d588zV.png)](http://codepen.io/artzub/pen/vcfyd)
 
 This library is child of two parents:  
 * [WorldBank Contract Awards](http://d3.artzub.com/wbca/)
@@ -22,9 +22,9 @@ Depends of [D3js](http://d3js.org)
 
 - [Quick Example](#qe)
 - [Documentation](#api)
-    - [Properties](#Properties)
-    - [Settings](#Settings)
-    - [Methods](#Methods)
+    - [Properties](#properties)
+    - [Settings](#settings)
+    - [Methods](#methods)
 - [For developers](#fd)
 
 <a name="qe" />
@@ -114,6 +114,16 @@ d3bh.on('calcRightBound', function(l) {
 <a name="api" />
 ## Documentation
 
+For creation instance of the blackHole object, need call method of the d3js object
+```javascript
+var bh = d3.blackHole('#canvas');
+```
+__d3.blackHole__```= function (node) {}```  
+> __node__ — or a selector, or a dom node, or a d3 node
+> returning the blackHole object
+
+will further describe the properties and methods of the blackHole object.
+
 ### Properties
 
 * __version__ — the version of library
@@ -121,52 +131,60 @@ d3bh.on('calcRightBound', function(l) {
 
 ### Settings
 
+All fields can change dynamic.  
+Access to settings fields is
+```javascript
+bh.setting.
+```
+
 * #### Items
-    * __alpha__ — uses for calculation cluster (default: 0.025)
-    * __childLife__ — number of ticks of life a child node (default: 255)
-    * __parentLife__ — number of ticks of life a parent node, after the death of all children (default: 255)
-    * __rateOpacity__ — rate of decrease of opacity (default: .5)
-    * __rateFlash__ — rate of decrease of flash effect (default: 2.5)
-    * __padding__ — padding of parent (default: 25)
+    * __alpha__ — uses for calculation cluster (default: `0.025`)
+    * __childLife__ — number of ticks of life a child node (default: `255`)
+    * __parentLife__ — number of ticks of life a parent node, after the death of all children (default: `255`)
+    * __rateOpacity__ — rate of decrease of opacity (default: `.5`)
+    * __rateFlash__ — rate of decrease of flash effect (default: `2.5`)
+    * __padding__ — padding of parent (default: `25`)
 
 * #### Behavior
-    * __skipEmptyDate__ — skips empty dates (default: true). 
-        > *if after filtering data, an array is empty then it steps on next date.* 
-    * __realtime__ — indicates that need work in mode realtime (default: false). 
-        > *This parameters must be initialized before starting visualization.* 
-    * __asyncParsing__ — parsing data in async mode (default: false). 
-        > If param is true, then will work method [.on('parsing')](#on_parsing)
-        > *This parameters must be initialized before starting visualization.*
-    * __speed__ — sets milliseconds for setInterval of method filtering data (default: 1000)
-    * __increaseChildWhenCreated__ — increase children nodes when they are created (default: false)
-    * __createNearParent__ — create children nodes near they parents (default: false)
+    * __skipEmptyDate__ — skips empty dates (default: `true`).  
+        > if after filtering data, an array is empty then it steps on next date.   
+    * __realtime__ — indicates that need work in mode realtime (default: `false`).   
+        > *This parameters must be initialized before starting visualization.*  
+    * __asyncParsing__ — parsing data in async mode (default: `false`).  
+        > If param is true, then will work method [.on('parsing')](#on_parsing)  
+        > *This parameters must be initialized before starting visualization.*  
+    * __speed__ — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
+    * __increaseChildWhenCreated__ — increase children nodes when they are created (default: `false`)
+    * __createNearParent__ — create children nodes near they parents (default: `false`)
 
 * #### Drawing
-    * __blendingLighter__ — if true, then sets the property canvas compositeOperation in the 'lighter' value (default: true)
-    * __drawEdge__ — drawing edges (default: false)
-    * __drawChild__ — drawing children nodes (default: true)
-    * __drawChildLabel__ — drawing labels of children nodes (default: false)
-    * __drawParent__ — drawing parents nodes (default: true)
-    * __drawParentLabel__ — drawing labels of parents nodes (default: true) 
-    * __drawPaddingCircle__ — drawing padding circles of parents nodes (default: false) 
-    * __drawHalo__ — drawing the halo effect of children nodes (default: true)
-    * __drawTrack__ — drawing track of children nodes (default: true)
-    * __drawAsPlasma__ — drawing children nodes uses plasma effect (default: true)
-    * __drawParentImg__ — drawing images of parents nodes (default: true) 
-    * __hasLabelMaxWidth__ — if true, then uses the maxWidth argument into the fillText method, in other words, text zooming based on the max width of canvas. (default: true) 
+    * __blendingLighter__ — if true, then sets the property `compositeOperation` of canvas in the `'lighter'` value (default: `true`)
+    * __drawEdge__ — drawing edges (default: `false`)
+    * __drawChild__ — drawing children nodes (default: `true`)
+    * __drawChildLabel__ — drawing labels of children nodes (default: `false`)
+    * __drawParent__ — drawing parents nodes (default: `true`)
+    * __drawParentLabel__ — drawing labels of parents nodes (default: `true`) 
+    * __drawPaddingCircle__ — drawing padding circles of parents nodes (default: `false`) 
+    * __drawHalo__ — drawing the halo effect of children nodes (default: `true`)
+    * __drawTrack__ — drawing track of children nodes (default: `true`)
+    * __drawAsPlasma__ — drawing children nodes uses plasma effect (default: `true`)
+    * __drawParentImg__ — drawing images of parents nodes (default: `true`) 
+    * __hasLabelMaxWidth__ — if true, then uses the `maxWidth` argument into the `fillText` method, in other words, text zooming based on the max width of canvas. (default: `true`) 
 
 * #### Colors
-    * __colorless__ — 
-    * __colorlessFlash__ — 
-    * __parentColors__ — 
-    * __categoryColors__ — 
+    * __colorless__ — a color for bleaching (default: `rgb(128, 128, 128)`)
+    * __colorlessFlash__ — a color for bleaching when using the flash effect (default: `rgb(211, 211, 211)`)
+    * __parentColors__ — colors of parents nodes (default: `d3.scale.category20b()`)  
+        > it is a `d3.scale.ordinal` object, can initialised as `d3.scale.ordinal.domain(['pie', 'roll', ...]).range(['red', 'blue', ...])`  
+        > [more about d3 category](https://github.com/mbostock/d3/blob/master/src/scale/category.js)  
+    * __categoryColors__ — colors of children nodes categories (default: `d3.scale.category20()`)
 
 * #### Zoom and drag
-    * __zoomAndDrag__ — 
-    * __zoom__ — 
-    * __scale__ — 
-    * __translate__ — 
-    * __scaleExtent__ — 
+    * __zoomAndDrag__ — enable zooming and dragging canvas (default: `true`)
+    * __zoom__ — a function `d3.zoom` (default: ~~generate when start visualization~~)
+    * __scale__ — initial `scale` of canvas (default: `1`)
+    * __translate__ — initial `translate` of canvas (default: `[0, 0]`)
+    * __scaleExtent__ — scale extent for `d3.zoom` (default: `[.1, 8]`)
 
 ### Methods
 
