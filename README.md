@@ -4,7 +4,7 @@ blackHole.js
 ## Introduce
 
 [![Blackhole.js](http://i.imgur.com/6d588zV.png)](http://codepen.io/artzub/pen/vcfyd)
-
+![Analytics](https://ga-beacon.appspot.com/UA-28343295-16/blackhole.js/readme?pixel)
 This library is child of two projects:  
 * [WorldBank Contract Awards](http://d3.artzub.com/wbca/)
 * [GitHub Visualizer](http://artzub.com/ghv)
@@ -17,8 +17,6 @@ Suitable for the visualization of such data as:
 * And etc.
 
 Depends of [D3js](http://d3js.org)
-
-![Analytics](https://ga-beacon.appspot.com/UA-28343295-16/blackhole.js/readme?pixel)
 
 ## Structure
 
@@ -125,11 +123,12 @@ For creation instance of the `blackHole` object, need call method of the d3js ob
 ```javascript
 var bh = d3.blackHole('#canvas');
 ```
-__d3.blackHole(node)__  
-> __node__ — or a selector, or a dom node, or a d3 node  
-> returning the blackHole object
+__d3.blackHole(*[node]*)__  
+  
+    > __node__ — or a selector, or a dom node, or a d3 node (default: `document.body`)  
+    > returning the blackHole object
 
-will further describe the properties and methods of the blackHole object.
+Next describe the properties and methods of the blackHole object.
 
 ### Properties
 
@@ -425,3 +424,15 @@ Most of the methods returning `blackHole` object in order to use chain.
 <a name="fd" />
 ## For developers
 
+If you want to modify `blackHole.js`, click the "Fork" button in the top-right corner of this page, and then clone your fork from the command line by replacing username with your GitHub username:
+```bash
+git clone git://github.com/username/blackhole.js.git
+```
+On the other hand, if you want to extend blackHole with new features, fix bugs, or run tests, you should fork the blackHole repository, and install Node.js (version 0.10.x or higher). From the root directory of this repository, you can then install blackHole's dependencies:
+```bash
+npm install
+```
+For make:
+```bash
+make full
+```
