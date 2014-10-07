@@ -303,7 +303,7 @@
                     return (a || 0) + (b.currents[id] || 0);
                 };
             }(groupBy), null);
-            parser.categoryMax = j > parser.categoryMax ? j : parser.categoryMax;
+            parser.categoryMax = Math.max(parser.categoryMax, j);
             doParsing(n);
         }
         parser.setInitState = function(node) {
@@ -871,17 +871,20 @@
         };
         bh.parents = function(arg) {
             if (!arguments.length) return parser.parentHash;
-            if (arg instanceof Object) parser.parentHash = d3.map(arg);
+            if (arg instanceof Object) arg = d3.map(arg);
+            parser.parentHash = arg;
             return bh;
         };
         bh.children = function(arg) {
             if (!arguments.length) return parser.childHash;
-            if (arg instanceof Object) parser.childHash = d3.map(arg);
+            if (arg instanceof Object) arg = d3.map(arg);
+            parser.childHash = arg;
             return bh;
         };
         bh.categories = function(arg) {
             if (!arguments.length) return parser.categoryHash;
-            if (arg instanceof Object) parser.categoryHash = d3.map(arg);
+            if (arg instanceof Object) arg = d3.map(arg);
+            parser.categoryHash = arg;
             return bh;
         };
         bh.categoryMax = function(val) {

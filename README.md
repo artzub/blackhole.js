@@ -5,7 +5,7 @@ blackHole.js
 
 [![Blackhole.js](http://i.imgur.com/6d588zV.png)](http://codepen.io/artzub/pen/vcfyd)
 
-This library is child of two parents:  
+This library is child of two projects:  
 * [WorldBank Contract Awards](http://d3.artzub.com/wbca/)
 * [GitHub Visualizer](http://artzub.com/ghv)
 
@@ -25,6 +25,11 @@ Depends of [D3js](http://d3js.org)
     - [Properties](#properties)
     - [Settings](#settings)
     - [Methods](#methods)
+    - [Realtime Mode](#realtime-mode)
+    - [Node object](#node-object)
+        - [Parent node](#parent-node)
+        - [Child node](#child-node)
+    - [Category object](#category-object)
 - [For developers](#fd)
 
 <a name="qe" />
@@ -126,8 +131,8 @@ will further describe the properties and methods of the blackHole object.
 
 ### Properties
 
-* __version__ — the version of library
-* __setting__ — object with fields of [settings](#settings)
+* *bh.setting.*__version__ — the version of library
+* *bh.setting.*__setting__ — object with fields of [settings](#settings)
 
 ### Settings
 
@@ -146,9 +151,10 @@ All fields can change dynamic.
         
         > if after filtering data, an array is empty then it steps on next date.
            
-    * *bh.setting.*__realtime__ — indicates that need work in mode realtime (default: `false`).
+    * *bh.setting.*__realtime__<a name="realtime" /> — indicates that need work in mode realtime (default: `false`).
        
-        > *This parameters must be initialized before starting visualization.*
+        > more info [realtime mode](#realtime-mode)  
+        > *This parameters must be initialized before starting visualization.*  
           
     * *bh.setting.*__asyncParsing__ — parsing data in async mode (default: `false`).
       
@@ -172,13 +178,13 @@ All fields can change dynamic.
     * *bh.setting.*__drawParentLabel__ — drawing labels of parents nodes (default: `true`) 
     * *bh.setting.*__drawPaddingCircle__ — drawing padding circles of parents nodes (default: `false`) 
     * *bh.setting.*__drawHalo__ — drawing the halo effect of children nodes (default: `true`)
-    * *bh.setting.*__drawTrack__ — drawing track of children nodes (default: `true`)
+    * *bh.setting.*__drawTrack__ — drawing track of children nodes (default: `false`)
     * *bh.setting.*__drawAsPlasma__ — drawing children nodes uses plasma effect (default: `true`)
     * *bh.setting.*__drawParentImg__ — drawing images of parents nodes (default: `true`) 
     * *bh.setting.*__hasLabelMaxWidth__ — if true, then uses the `maxWidth` argument into the `fillText` method, in other words, text zooming based on the max width of canvas. (default: `true`) 
 
 * #### Colors
-    * *bh.setting.*__colorless__ — a color for bleaching (default: `rgb(128, 128, 128)`)
+    * *bh.setting.*__colorless__<a name="colorless" /> — a color for bleaching (default: `rgb(128, 128, 128)`)
     * *bh.setting.*__colorlessFlash__ — a color for bleaching when using the flash effect (default: `rgb(211, 211, 211)`)
     * *bh.setting.*__parentColors__ — colors of parents nodes (default: `d3.scale.category20b()`)
     
@@ -196,27 +202,119 @@ All fields can change dynamic.
 
 ### Methods
 
-* __[start](#start)()__<a name="start" />
+Most of the methods returning `blackHole` object in order to use chain.
+
+* __[start](#start)(inData, width, height, reInitData, callback)__<a name="start" />
+    
+    > running the dynamic visualization, also using for restart the visualization.
+    > ***  
+    > __inData__ *{Array}* — an array of source data  
+    > __width__ *{Number}* — width of canvas that will be created (default: `parentNode.width`)  
+    > __height__ *{Number}* — height of canvas that will be created (default: `parentNode.height`)  
+    > __reInitData__ *{Boolean}* — reinitializing source data   
+    > __callback__ *{Function}* — callback method. Mainly used if use start method when visualizing is ran  
+    > ***  
+    > __return__ `__backHole__` object  
+    
 * __[stop](#stop)()__<a name="stop" />
+
+    > Stop a running visualization  
+    > After using this method [resume](#resume) will not work, need use [start](#start)  
+    > __return__ `__backHole__` object  
+
 * __[pause](#pause)()__<a name="pause" />
+
+    > Pause a running visualization  
+    > __return__ `__backHole__` object  
+
 * __[resume](#resume)()__<a name="resume" />
+
+    > Resume a paused visualization  
+    > __return__ `__backHole__` object  
+
 * __[append](#append)()__<a name="append" />
+
+    > Append source data into visualization collection with using parsing  
+    > This method is effective if [realtime](#realtime) is true,  
+    > but can used anytime  
+    > more info [realtime mode](#realtime-mode)  
+    > ***  
+    > __return__ `__backHole__` object  
+
 * __[IsRun](#is-run)()__<a name="is-run" />
+
+    > Returning the true if a visualization is paused or running  
+    
 * __[IsPaused](#is-paused)()__<a name="is-paused" />
 
-* __[selectNode](#select-node)(node)__<a name="select-node" />
-* __[selectCategory](#select-category)(category)__<a name="select-category" />
-* __[frozenCategory](#frozen-category)(category)__<a name="frozen-category" />
+    > Returning the true if a visualization is paused
 
-* __[parents](#parents)(arg)__<a name="parents" />
-* __[children](#children)(arg)__<a name="children" />
-* __[categories](#categories)(arg)__<a name="categories" />
-* __[categoryMax](#category-max)(val)__<a name="category-max" />
+***
+
+* __[selectNode](#select-node)(**[node]**)__<a name="select-node" />
+    
+    > Gets or sets a selected [node](#node-object).  
+    > __category__ — [node](#node-object) object   
+    > If called without arguments then returns the selected node,  
+    > else sets the selected node and returns `__blackHole__` object.
+    > ***  
+    > If set the selected node, then colors of nodes will be [colorless](#colorless),
+    > if a [category](#category-object) of a node is not equals a category of the selected node.
+
+* __[selectCategory](#select-category)(**[category]**)__<a name="select-category" />
+
+    > Gets or sets a selected [category](#category-object)  
+    > __category__ — [category](#category-object) object  
+    > If called without arguments then returns the selected category,
+    > else sets the selected node and returns `__blackHole__` object.
+    > ***  
+    > If set the selected category, then colors of nodes will be [colorless](#colorless),  
+    > if a category of a node is not equals the selected category.
+
+* __[frozenCategory](#frozen-category)(**[category]**)__<a name="frozen-category" />
+
+    > Gets or sets a frozen [category](#category-object)  
+    > __category__ — [category](#category-object) object   
+    > If called without arguments then returns the frozen category,
+    > else sets the frozen node and returns `__blackHole__` object.  
+    > ***  
+    > If set the frozen category, then nodes will be hidden,  
+    > if a category of a node is not equals the frozen category.
+
+***
+
+* __[parents](#parents)(**[arg]**)__<a name="parents" />
+
+    > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [parents nodes](#parent-node)  
+    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a parent node     
+    > ***  
+    > If called without arguments then returns the `d3_Map` object of patents nodes  
+    > else sets patents nodes and returns `__blackHole__` object. 
+    
+* __[children](#children)(**[arg]**)__<a name="children" />
+
+    > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [children nodes](#child-node)  
+    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a child node     
+    > ***  
+    > If called without arguments then returns the `d3_Map` object of children nodes  
+    > else sets children nodes and returns `__blackHole__` object.  
+
+* __[categories](#categories)(**[arg]**)__<a name="categories" />
+
+    > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [categories](#category-object)  
+    > __arg__ — must be or hash object, or `d3_Map` object where a key is a key field of a category     
+    > ***  
+    > If called without arguments then returns the `d3_Map` object of categories  
+    > else sets categories and returns `__blackHole__` object.  
+
+***
 
 * __[sort](#sort)(func)__<a name="sort" />
     > function(a, b){}  
 * __[filter](#filter)(func)__<a name="filter" />
     > function(l, r){}  
+
+***
 
 * __[speed](#speed)(millisecond)__<a name="speed" />
 * __[size](#size)__<a name="size" />
@@ -225,6 +323,8 @@ All fields can change dynamic.
 * __[scale](#scale)__<a name="scale" />
 * __[getCanvas](#get-canvas)__<a name="get-canvas" />
 * __[findStyleProperty](#find-style-property)()__<a name="find-style-property" />
+
+***
 
 * __[on](#on)(key, value)__<a name="on" />  
 
@@ -267,6 +367,13 @@ All fields can change dynamic.
     | __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> |  |  |
     | __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> |  |  |
     
+### Realtime Mode
+
+### Node object
+#### Parent node
+#### Child node
+### Category object
+
 <a name="fd" />
 ## For developers
 

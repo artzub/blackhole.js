@@ -372,7 +372,7 @@ function Parser() {
             return (a || 0) + (b.currents[id] || 0);
         }})(groupBy), null);
 
-        parser.categoryMax = j > parser.categoryMax ? j : parser.categoryMax;
+        parser.categoryMax = Math.max(parser.categoryMax, j);
 
         doParsing(n);
     }

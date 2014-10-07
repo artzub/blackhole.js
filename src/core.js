@@ -95,7 +95,8 @@ blackhole = function (node) {
         if (!arguments.length)
             return parser.parentHash;
         if (arg instanceof Object)
-            parser.parentHash = d3.map(arg);
+            arg = d3.map(arg);
+        parser.parentHash = arg;
         return bh;
     };
 
@@ -103,7 +104,8 @@ blackhole = function (node) {
         if (!arguments.length)
             return parser.childHash;
         if (arg instanceof Object)
-            parser.childHash = d3.map(arg);
+            arg = d3.map(arg);
+        parser.childHash = arg;
         return bh;
     };
 
@@ -111,7 +113,8 @@ blackhole = function (node) {
         if (!arguments.length)
             return parser.categoryHash;
         if (arg instanceof Object)
-            parser.categoryHash = d3.map(arg);
+            arg = d3.map(arg);
+        parser.categoryHash = arg;
         return bh;
     };
 
