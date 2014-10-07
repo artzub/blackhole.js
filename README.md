@@ -215,7 +215,7 @@ Most of the methods returning `blackHole` object in order to use chain.
     > __width__ *{Number}* — width of canvas that will be created (default: `parentNode.width`)  
     > __height__ *{Number}* — height of canvas that will be created (default: `parentNode.height`)  
     > __reInitData__ *{Boolean}* — reinitializing source data   
-    > __callback__ *{Function}* — callback method. Mainly used if use start method when visualizing is ran
+    > __callback__ *{Function}* — callback method. Mainly used if use start method when visualizing is ran  
     >   
     > __return__ `blackHole` object  
     
@@ -247,7 +247,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 * *bh.*__[IsRun](#is-run)()__<a name="is-run" />
 
     > Returning the true if a visualization is paused or running  
-    
+
 * *bh.*__[IsPaused](#is-paused)()__<a name="is-paused" />
 
     > Returning the true if a visualization is paused
@@ -259,17 +259,17 @@ Most of the methods returning `blackHole` object in order to use chain.
     > Gets or sets a selected [node](#node-object).  
     > __node__ — [node](#node-object) object   
     > If called without arguments then returns the selected node,  
-    > else sets the selected node and returns `blackHole` object.
+    > else sets the selected node and returns `blackHole` object.  
     >   
-    > If set the selected node, then colors of nodes will be [colorless](#colorless),
+    > If set the selected node, then colors of nodes will be [colorless](#colorless),  
     > if a [category](#category-object) of a node is not equals a category of the selected node.
 
 * *bh.*__[selectCategory](#select-category)(*[category]*)__<a name="select-category" />
 
     > Gets or sets a selected [category](#category-object)  
     > __category__ — [category](#category-object) object  
-    > If called without arguments then returns the selected category,
-    > else sets the selected node and returns `blackHole` object.
+    > If called without arguments then returns the selected category,  
+    > else sets the selected node and returns `blackHole` object.  
     >   
     > If set the selected category, then colors of nodes will be [colorless](#colorless),  
     > if a category of a node is not equals the selected category.
@@ -278,7 +278,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 
     > Gets or sets a frozen [category](#category-object)  
     > __category__ — [category](#category-object) object   
-    > If called without arguments then returns the frozen category,
+    > If called without arguments then returns the frozen category,  
     > else sets the frozen node and returns `blackHole` object.  
     >   
     > If set the frozen category, then nodes will be hidden,  
@@ -289,7 +289,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 * *bh.*__[parents](#parents)(*[arg]*)__<a name="parents" />
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [parents nodes](#parent-node)  
-    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a parent node     
+    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a parent node  
     >   
     > If called without arguments then returns the `d3_Map` object of patents nodes  
     > else sets patents nodes and returns `blackHole` object. 
@@ -297,7 +297,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 * *bh.*__[children](#children)(*[arg]*)__<a name="children" />
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [children nodes](#child-node)  
-    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a child node     
+    > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a child node  
     >   
     > If called without arguments then returns the `d3_Map` object of children nodes  
     > else sets children nodes and returns `blackHole` object.  
@@ -305,7 +305,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 * *bh.*__[categories](#categories)(*[arg]*)__<a name="categories" />
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [categories](#category-object)  
-    > __arg__ — must be or hash object, or `d3_Map` object where a key is a key field of a category     
+    > __arg__ — must be or hash object, or `d3_Map` object where a key is a key field of a category  
     >   
     > If called without arguments then returns the `d3_Map` object of categories  
     > else sets categories and returns `blackHole` object.  
@@ -323,7 +323,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 * *bh.*__[filter](#filter)(*[func]*)__<a name="filter" />
     
     > Gets or sets a filter function for source data  
-    > __func__ *{Function}* — `function(l, r) {}`, `l` and `r` are the left and the right bounds of filtering ([default function](src/core.js#L223))     
+    > __func__ *{Function}* — `function(l, r) {}`, `l` and `r` are the left and the right bounds of filtering ([default function](src/core.js#L223))  
     >   
     > If called without arguments then returns a filter function  
     > else sets a filter function and returns `blackHole` object.
@@ -332,16 +332,16 @@ Most of the methods returning `blackHole` object in order to use chain.
 
 * *bh.*__[speed](#speed)(*[milliseconds]*)__<a name="speed" />
 
-    > Gets or sets a [speed](#setting-speed) of visualization on milliseconds
+    > Gets or sets a [speed](#setting-speed) of visualization on milliseconds  
     > __milliseconds__ {Number}  
     > If called without arguments then returns current speed  
     > else sets a speed and returns `blackHole` object.
 
 * *bh.*__[size](#size)(*[array]*)__<a name="size" />
 
-    > Gets and sets a size for canvas
+    > Gets and sets a size for canvas  
     > __array__ {Array} — `[w, h]` the new size of canvas  
-    > This method used for resizing canvas
+    > This method used for resizing canvas  
     >   
     > If called without arguments then returns current size  
     > else sets a size and returns `blackHole` object.   
@@ -352,7 +352,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 
 * *bh.*__[scale](#scale)(*[scale]*)__<a name="scale" />
 
-    > Gets and sets a scale for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)
+    > Gets and sets a scale for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)  
     > __scale__ {Number}  
     >   
     > If called without arguments then returns current scale  
@@ -360,7 +360,7 @@ Most of the methods returning `blackHole` object in order to use chain.
 
 * *bh.*__[translate](#translate)(*[array]*)__<a name="translate" />
 
-    > Gets and sets a translate for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)
+    > Gets and sets a translate for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)  
     > __array__ {Array} — `[x, y]` the coordinate of point for translate  
     >   
     > If called without arguments then returns current translate  
