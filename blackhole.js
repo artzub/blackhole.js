@@ -941,6 +941,7 @@
         bh.setting.hasLabelMaxWidth = true;
         bh.setting.realtime = false;
         bh.setting.asyncParsing = false;
+        bh.setting.skipEmptyDate = true;
         bh.on = function(key, value) {
             if (!key || !(typeof key === "string")) return bh;
             key = key.toLowerCase();

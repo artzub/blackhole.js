@@ -139,6 +139,8 @@ Next describe the properties and methods of the blackHole object.
 
 All fields can change dynamic.  
 
+> For try how to work setting look this [example II](http://codepen.io/artzub/pen/pygqo)  
+
 * #### Items
     * *bh.setting.*__alpha__ — uses for calculation cluster (default: `0.025`)
     * *bh.setting.*__childLife__ — number of ticks of life a child node (default: `255`)

@@ -172,6 +172,7 @@ blackhole = function (node) {
     bh.setting.hasLabelMaxWidth = true;
     bh.setting.realtime = false;
     bh.setting.asyncParsing = false;
+    bh.setting.skipEmptyDate = true;
 
 
     bh.on = function(key, value) {
