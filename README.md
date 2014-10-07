@@ -119,7 +119,7 @@ d3bh.on('calcRightBound', function(l) {
 <a name="api" />
 ## Documentation
 
-For creation instance of the blackHole object, need call method of the d3js object
+For creation instance of the `blackHole` object, need call method of the d3js object
 ```javascript
 var bh = d3.blackHole('#canvas');
 ```
@@ -161,7 +161,7 @@ All fields can change dynamic.
         > If param is true, then will work method [.on('parsing')](#on_parsing)  
         > *This parameters must be initialized before starting visualization.* 
          
-    * *bh.setting.*__speed__ — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
+    * *bh.setting.*__speed__<a name='setting-speed' /> — sets milliseconds for `setInterval` of method filtering data (default: `1000`)
         
         > *This parameters must be initialized before starting visualization.*  
         > After need use [speed](#speed) method
@@ -195,10 +195,13 @@ All fields can change dynamic.
 
 * #### Zoom and drag
     * *bh.setting.*__zoomAndDrag__ — enable zooming and dragging canvas (default: `true`)
-    * *bh.setting.*__zoom__ — a function `d3.zoom` (default: ~~generate when start visualization~~)
-    * *bh.setting.*__scale__ — initial `scale` of canvas (default: `1`)
-    * *bh.setting.*__translate__ — initial `translate` of canvas (default: `[0, 0]`)
+    * *bh.setting.*__zoom__<a name="#setting-zoom" /> — a function [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior) (default: ~~generate when start visualization~~)
     * *bh.setting.*__scaleExtent__ — scale extent for `d3.zoom` (default: `[.1, 8]`)
+    
+    _Following settings must be initialized before starting, after need using methods with the same names_  
+    
+    * *bh.setting.*__scale__<a name="#setting-scale" /> — initial `scale` for `d3.zoom` (default: `1`)
+    * *bh.setting.*__translate__<a name="#setting-translate" /> — initial `translate` for `d3.zoom` (default: `[0, 0]`)
 
 ### Methods
 
@@ -207,30 +210,30 @@ Most of the methods returning `blackHole` object in order to use chain.
 * __[start](#start)(inData, width, height, reInitData, callback)__<a name="start" />
     
     > running the dynamic visualization, also using for restart the visualization.
-    > ***  
+    >   
     > __inData__ *{Array}* — an array of source data  
     > __width__ *{Number}* — width of canvas that will be created (default: `parentNode.width`)  
     > __height__ *{Number}* — height of canvas that will be created (default: `parentNode.height`)  
     > __reInitData__ *{Boolean}* — reinitializing source data   
-    > __callback__ *{Function}* — callback method. Mainly used if use start method when visualizing is ran  
-    > ***  
-    > __return__ `__backHole__` object  
+    > __callback__ *{Function}* — callback method. Mainly used if use start method when visualizing is ran
+    >   
+    > __return__ `backHole` object  
     
 * __[stop](#stop)()__<a name="stop" />
 
     > Stop a running visualization  
     > After using this method [resume](#resume) will not work, need use [start](#start)  
-    > __return__ `__backHole__` object  
+    > __return__ `backHole` object  
 
 * __[pause](#pause)()__<a name="pause" />
 
     > Pause a running visualization  
-    > __return__ `__backHole__` object  
+    > __return__ `backHole` object  
 
 * __[resume](#resume)()__<a name="resume" />
 
     > Resume a paused visualization  
-    > __return__ `__backHole__` object  
+    > __return__ `backHole` object  
 
 * __[append](#append)()__<a name="append" />
 
@@ -238,8 +241,8 @@ Most of the methods returning `blackHole` object in order to use chain.
     > This method is effective if [realtime](#realtime) is true,  
     > but can used anytime  
     > more info [realtime mode](#realtime-mode)  
-    > ***  
-    > __return__ `__backHole__` object  
+    >   
+    > __return__ `backHole` object  
 
 * __[IsRun](#is-run)()__<a name="is-run" />
 
@@ -254,10 +257,10 @@ Most of the methods returning `blackHole` object in order to use chain.
 * __[selectNode](#select-node)(**[node]**)__<a name="select-node" />
     
     > Gets or sets a selected [node](#node-object).  
-    > __category__ — [node](#node-object) object   
+    > __node__ — [node](#node-object) object   
     > If called without arguments then returns the selected node,  
-    > else sets the selected node and returns `__blackHole__` object.
-    > ***  
+    > else sets the selected node and returns `blackHole` object.
+    >   
     > If set the selected node, then colors of nodes will be [colorless](#colorless),
     > if a [category](#category-object) of a node is not equals a category of the selected node.
 
@@ -266,8 +269,8 @@ Most of the methods returning `blackHole` object in order to use chain.
     > Gets or sets a selected [category](#category-object)  
     > __category__ — [category](#category-object) object  
     > If called without arguments then returns the selected category,
-    > else sets the selected node and returns `__blackHole__` object.
-    > ***  
+    > else sets the selected node and returns `blackHole` object.
+    >   
     > If set the selected category, then colors of nodes will be [colorless](#colorless),  
     > if a category of a node is not equals the selected category.
 
@@ -276,8 +279,8 @@ Most of the methods returning `blackHole` object in order to use chain.
     > Gets or sets a frozen [category](#category-object)  
     > __category__ — [category](#category-object) object   
     > If called without arguments then returns the frozen category,
-    > else sets the frozen node and returns `__blackHole__` object.  
-    > ***  
+    > else sets the frozen node and returns `blackHole` object.  
+    >   
     > If set the frozen category, then nodes will be hidden,  
     > if a category of a node is not equals the frozen category.
 
@@ -287,42 +290,85 @@ Most of the methods returning `blackHole` object in order to use chain.
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [parents nodes](#parent-node)  
     > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a parent node     
-    > ***  
+    >   
     > If called without arguments then returns the `d3_Map` object of patents nodes  
-    > else sets patents nodes and returns `__blackHole__` object. 
+    > else sets patents nodes and returns `blackHole` object. 
     
 * __[children](#children)(**[arg]**)__<a name="children" />
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [children nodes](#child-node)  
     > __arg__ — must be or hash object,  or `d3_Map` object where a key is a key field of a child node     
-    > ***  
+    >   
     > If called without arguments then returns the `d3_Map` object of children nodes  
-    > else sets children nodes and returns `__blackHole__` object.  
+    > else sets children nodes and returns `blackHole` object.  
 
 * __[categories](#categories)(**[arg]**)__<a name="categories" />
 
     > Gets or sets [d3_Map](https://github.com/mbostock/d3/wiki/Arrays#d3_map) object of [categories](#category-object)  
     > __arg__ — must be or hash object, or `d3_Map` object where a key is a key field of a category     
-    > ***  
+    >   
     > If called without arguments then returns the `d3_Map` object of categories  
-    > else sets categories and returns `__blackHole__` object.  
+    > else sets categories and returns `blackHole` object.  
 
 ***
 
-* __[sort](#sort)(func)__<a name="sort" />
-    > function(a, b){}  
-* __[filter](#filter)(func)__<a name="filter" />
-    > function(l, r){}  
+* __[sort](#sort)(**[func]**)__<a name="sort" />
+
+    > Gets or sets a sort function for source data  
+    > __func__ *{Function}* — `function(a, b) {}`, `a` and `b` are two source nodes value ([default function](src/core.js#L211))  
+    >   
+    > If called without arguments then returns a sort function  
+    > else sets a sort function and returns `blackHole` object.
+
+* __[filter](#filter)(**[func]**)__<a name="filter" />
+    
+    > Gets or sets a filter function for source data  
+    > __func__ *{Function}* — `function(l, r) {}`, `l` and `r` are the left and the right bounds of filtering ([default function](src/core.js#L223))     
+    >   
+    > If called without arguments then returns a filter function  
+    > else sets a filter function and returns `blackHole` object.
 
 ***
 
-* __[speed](#speed)(millisecond)__<a name="speed" />
-* __[size](#size)__<a name="size" />
-* __[translate](#translate)__<a name="translate" />
-* __[style](#style)(name, value, priority)__<a name="style" />
-* __[scale](#scale)__<a name="scale" />
+* __[speed](#speed)(**[milliseconds]**)__<a name="speed" />
+
+    > Gets or sets a [speed](#setting-speed) of visualization on milliseconds
+    > __milliseconds__ {Number}  
+    > If called without arguments then returns current speed  
+    > else sets a speed and returns `blackHole` object.
+
+* __[size](#size)(**[array]**)__<a name="size" />
+
+    > Gets and sets a size for canvas
+    > __array__ {Array} — `[w, h]` the new size of canvas  
+    > This method used for resizing canvas
+    >   
+    > If called without arguments then returns current size  
+    > else sets a size and returns `blackHole` object.   
+
+* __[style](#style)(name**[, value[, priority]]**)__<a name="style" />
+
+    > Wrapper for [d3.style](https://github.com/mbostock/d3/wiki/Selections#style) but apply only the main canvas node.
+
+* __[scale](#scale)(**[scale]**)__<a name="scale" />
+
+    > Gets and sets a scale for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)
+    > __scale__ {Number}  
+    >   
+    > If called without arguments then returns current scale  
+    > else sets a scale and returns `blackHole` object.
+
+* __[translate](#translate)(**[array]**)__<a name="translate" />
+
+    > Gets and sets a translate for [d3.zoom](https://github.com/mbostock/d3/wiki/Zoom-Behavior)
+    > __array__ {Array} — `[x, y]` the coordinate of point for translate  
+    >   
+    > If called without arguments then returns current translate  
+    > else sets a translate and returns `blackHole` object.  
+
 * __[getCanvas](#get-canvas)__<a name="get-canvas" />
-* __[findStyleProperty](#find-style-property)()__<a name="find-style-property" />
+
+    > Returns the main canvas or null, if the visualization is not running.
 
 ***
 
