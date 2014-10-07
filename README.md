@@ -18,6 +18,8 @@ Suitable for the visualization of such data as:
 
 Depends of [D3js](http://d3js.org)
 
+[![Analytics](https://ga-beacon.appspot.com/UA-28343295-16/blackhole.js/readme)](https://github.com/artzub/blackhole.js)
+
 ## Structure
 
 - [Quick Example](#qe)
@@ -423,4 +425,3 @@ Most of the methods returning `blackHole` object in order to use chain.
 <a name="fd" />
 ## For developers
 
-![ga](http://www.google-analytics.com/__utm.gif?utmwv=4&utmac=UA-28343295-16&utmdt=blackholeReadme&utmhid=2052327202&utmn=1)
