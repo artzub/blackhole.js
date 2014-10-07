@@ -18,7 +18,7 @@ Suitable for the visualization of such data as:
 
 Depends of [D3js](http://d3js.org)
 
-[![Analytics](https://ga-beacon.appspot.com/UA-28343295-16/blackhole.js/readme)](https://github.com/artzub/blackhole.js)
+![Analytics](https://ga-beacon.appspot.com/UA-28343295-16/blackhole.js/readme?pixel)
 
 ## Structure
 
