@@ -124,9 +124,8 @@ For creation instance of the `blackHole` object, need call method of the d3js ob
 var bh = d3.blackHole('#canvas');
 ```
 __d3.blackHole(*[node]*)__  
-  
-    > __node__ — or a selector, or a dom node, or a d3 node (default: `document.body`)  
-    > returning the blackHole object
+> __node__ — or a selector, or a dom node, or a d3 node (default: `document.body`)  
+> returning the blackHole object
 
 Next describe the properties and methods of the blackHole object.
 
@@ -140,6 +139,7 @@ Next describe the properties and methods of the blackHole object.
 All fields can change dynamic.  
 
 > For try how to work setting look this [example II](http://codepen.io/artzub/pen/pygqo)  
+> also try this [dataset](https://gist.githubusercontent.com/artzub/10685338/raw/a2db0bc109ef94d3f93747c0100a4385e9eb5d4a/nodejs_history.xml)  
 
 * #### Items
     * *bh.setting.*__alpha__ — uses for calculation cluster (default: `0.025`)
