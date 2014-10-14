@@ -383,10 +383,11 @@ Most of the methods returning `blackHole` object in order to use chain.
     > ***key*** — a string value form __keys__  
     > ***value*** — a function  
 
-    * *__Action signals__*
+    * *__Action signals__*  
+    
     |  key  | value | description |
     | ----- | ----- | ----------- |
-    | __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> | `function(leftBound)` |  |
+    | __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> | `function(leftBound)` |  |  
     | __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> | `function(sourceItem)` |  |
     | __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> | `function(parentNodeItem)` |  |
     | __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> | `function(nodeItem)` |  |
@@ -405,7 +406,8 @@ Most of the methods returning `blackHole` object in order to use chain.
     | __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> | `function(sourceParentItem)` |  |
     | __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> | `function(sourceParentItem)` |  |
 
-    * *__Event signals__*
+    * *__Event signals__*  
+    
     |  key  | value | description |
     | ----- | ----- | ----------- |
     | __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> | `function(sourceData)` |  |
