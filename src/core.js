@@ -23,6 +23,7 @@ blackhole = function (node) {
                 , rateFlash : 2.5 // rate of decrease of flash
                 , blendingLighter : false // blending mode for canvas
                 , increaseChildWhenCreated : false // when a child is created his size will be increased
+                , increaseChild : true
                 , createNearParent : false
                 , zoomAndDrag : true // enable zooming and padding
                 , zoom : null // function d3.zoom
@@ -643,7 +644,7 @@ blackhole = function (node) {
                 delete n["correctSize"];
             }
 
-            n.size += 1;
+            bh.setting.increaseChild && (n.size += 1);
             n.fixed = false;//n === selected; //TODO bug when zooming. particle become frozen
 
             n.parent = p;

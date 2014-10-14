@@ -11,7 +11,7 @@
 
 !function() {
     var blackhole = {
-        version: "1.0.0"
+        version: "1.0.0.1"
     };
     (function() {
         var lastTime = 0;
@@ -841,6 +841,7 @@
                 rateFlash: 2.5,
                 blendingLighter: false,
                 increaseChildWhenCreated: false,
+                increaseChild: true,
                 createNearParent: false,
                 zoomAndDrag: true,
                 zoom: null,
@@ -1256,7 +1257,7 @@
                     n.size = n.hasOwnProperty("correctSize") ? n.correctSize : n.size;
                     delete n["correctSize"];
                 }
-                n.size += 1;
+                bh.setting.increaseChild && (n.size += 1);
                 n.fixed = false;
                 n.parent = p;
                 delete n.atTarget;

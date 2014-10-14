@@ -11,4 +11,4 @@
 "use strict";
 
 !function() {
-    var blackhole = {version: '1.0.0'};
+    var blackhole = {version: '1.0.0.1'};
