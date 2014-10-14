@@ -387,42 +387,42 @@ Most of the methods returning `blackHole` object in order to use chain.
     
     |  key  | value | description |
     | ----- | ----- | ----------- |
-    | __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> | `function(leftBound)` |  |  
-    | __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> | `function(sourceItem)` |  |
-    | __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> | `function(parentNodeItem)` |  |
-    | __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> | `function(nodeItem)` |  |
-    | __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> | `function(nodeItem)` |  |
-    | __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> | `function(sourceItem, nodeItem)` |  |
-    | __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> | `function(sourceItem)` |  |
-    | __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> | `function(sourceItem)` |  |
-    | __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> | `function(sourceItem)` |  |
-    | __[getParent](#on-get-parent)__<a name="on-get-parent" /> | `function(sourceItem)` |  |
-    | __[getParentKey](#on-get-parent-key)__<a name="on-get-parent-key" /> | `function(sourceParentItem)` |  |
-    | __[getParentImage](#on-get-parent-image)__<a name="on-get-parent-image" /> | `function(sourceParentItem)` |  |
-    | __[getGroupBy](#on-get-group-by)__<a name="on-get-group-by" /> | `function(sourceItem)` |  |
-    | __[getValue](#on-get-value)__<a name="on-get-value" /> | `function(sourceItem)` |  |
-    | __[getParentRadius](#on-get-parent-radius)__<a name="on-get-parent-radius" /> | `function(parentNodeItem)` |  |
-    | __[getChildRadius](#on-get-child-radius)__<a name="on-get-child-radius" /> | `function(nodeItem)` |  |
-    | __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> | `function(sourceParentItem)` |  |
-    | __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> | `function(sourceParentItem)` |  |
+    | __[calcRightBound](#on-calc-right-bound)__<a name="on-calc-right-bound" /> | `function(`__leftBound__`)` |  |  
+    | __[getChildLabel](#on-get-child-label)__<a name="on-get-child-label" /> | `function(`__sourceItem__`)` |  |
+    | __[getParentLabel](#on-get-parent-label)__<a name="on-get-parent-label" /> | `function(`__parentNodeItem__`)` |  |
+    | __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> | `function(`__nodeItem__`)` |  |
+    | __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> | `function(`__nodeItem__`)` |  |
+    | __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> | `function(`__sourceItem, nodeItem__`)` |  |
+    | __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> | `function(`__sourceItem`)` |  |
+    | __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> | `function(`__sourceItem__`)` |  |
+    | __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> | `function(`__sourceItem__`)` |  |
+    | __[getParent](#on-get-parent)__<a name="on-get-parent" /> | `function(`__sourceItem__`)` |  |
+    | __[getParentKey](#on-get-parent-key)__<a name="on-get-parent-key" /> | `function(`__sourceParentItem__`)` |  |
+    | __[getParentImage](#on-get-parent-image)__<a name="on-get-parent-image" /> | `function(`__sourceParentItem__`)` |  |
+    | __[getGroupBy](#on-get-group-by)__<a name="on-get-group-by" /> | `function(`__sourceItem__`)` |  |
+    | __[getValue](#on-get-value)__<a name="on-get-value" /> | `function(`__sourceItem__`)` |  |
+    | __[getParentRadius](#on-get-parent-radius)__<a name="on-get-parent-radius" /> | `function(`__parentNodeItem__`)` |  |
+    | __[getChildRadius](#on-get-child-radius)__<a name="on-get-child-radius" /> | `function(`__nodeItem__`)` |  |
+    | __[getParentPosition](#on-get-parent-position)__<a name="on-get-parent-position" /> | `function(`__sourceParentItem__`)` |  |
+    | __[getParentFixed](#on-get-parent-fixed)__<a name="on-get-parent-fixed" /> | `function(`__sourceParentItem__`)` |  |
 
     * *__Event signals__*  
     
     |  key  | value | description |
     | ----- | ----- | ----------- |
-    | __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> | `function(sourceData)` |  |
-    | __[parsing](#on-parsing)__<a name="on-parsing" /> | `function(nodeItem)` |  |
-    | __[afterParsing](#on-after-parsing)__<a name="on-after-parsing" /> | `function(nodesCollection)` |  |
-    | __[processing](#on-processing)__<a name="on-processing" /> | `function(currentItems, leftBound, rightBound)` |  |
-    | __[processed](#on-processed)__<a name="on-processed" /> | `function(currentItems, leftBound, rightBound)` |  |
+    | __[beforeParsing](#on-before-parsing)__<a name="on-before-parsing" /> | `function(`__sourceData__`)` |  |
+    | __[parsing](#on-parsing)__<a name="on-parsing" /> | `function(`__nodeItem__`)` |  |
+    | __[afterParsing](#on-after-parsing)__<a name="on-after-parsing" /> | `function(`__nodesCollection__`)` |  |
+    | __[processing](#on-processing)__<a name="on-processing" /> | `function(`__currentItems, leftBound, rightBound__`)` |  |
+    | __[processed](#on-processed)__<a name="on-processed" /> | `function(`__currentItems, leftBound, rightBound__`)` |  |
     | __[stopped](#on-stopped)__<a name="on-stopped" /> | `function()` |  |
-    | __[finished](#on-finished)__<a name="on-finished" /> | `function(leftBound, rightBound)` |  |
+    | __[finished](#on-finished)__<a name="on-finished" /> | `function(`__leftBound, rightBound__`)` |  |
     | __[starting](#on-starting)__<a name="on-starting" /> | `function()` |  |
     | __[started](#on-started)__<a name="on-started" /> | `function()` |  |
-    | __[mouseOverNode](#on-mouse-over-node)__<a name="on-mouse-over-node" /> | `function(nodeItem, d3event)` |  |
-    | __[mouseMove](#on-mouse-move)__<a name="on-mouse-move" /> | `function(nodeItem, d3event)` |  |
-    | __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> | `function(nodeItem, d3event)` |  |
-    | __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> | `function(nodeItem, parentNodeItem)` |  |
+    | __[mouseOverNode](#on-mouse-over-node)__<a name="on-mouse-over-node" /> | `function(`__nodeItem, d3event__`)` |  |
+    | __[mouseMove](#on-mouse-move)__<a name="on-mouse-move" /> | `function(`__nodeItem, d3event__`)` |  |
+    | __[mouseOutNode](#on-mouse-out-node)__<a name="on-mouse-out-node" /> | `function(`__nodeItem, d3event__`)` |  |
+    | __[particleAtTarget](#particleattarget)__<a name="on-particle-at-target" /> | `function(`__nodeItem, parentNodeItem__`)` |  |
     
 ### Realtime Mode
 
