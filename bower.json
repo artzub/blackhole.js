@@ -1,6 +1,6 @@
 {
   "name": "blackhole.js",
-  "main": "blackhole.js",
+  "main": ["blackhole.js", "blackhole.min.js"],
   "version": "0.0.2.99",
   "description": "Blackhole.js from artzub/blackhole.js on GitHub",
   "authors": [
