@@ -1,0 +1,22 @@
+{
+  "name": "blackhole.js",
+  "main": "blackhole.js",
+  "version": "0.0.2.99",
+  "description": "Blackhole.js from artzub/blackhole.js on GitHub",
+  "authors": [
+    "Artzub"
+  ],
+  "license": "MIT",
+  "homepage": "http://artzub.com/",
+  "private": true,
+  "dependencies": {
+     "d3": ">=3.4.0"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
