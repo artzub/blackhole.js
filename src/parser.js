@@ -257,7 +257,7 @@ function Parser() {
             return null;
 
         key = parser.setting.getParentKey()(parent);
-        if (typeof key === "undefined" || key == null)
+        if (key == null)
             key = "undefined";
 
         n = parser.parentHash.get(key);
@@ -279,7 +279,7 @@ function Parser() {
 
         key = parser.setting.getChildKey()(d);
 
-        if (typeof key === "undefined" || key == null)
+        if (key == null)
             key = "undefined";
 
         n = parser.childHash.get(key);

@@ -137,7 +137,7 @@ function Processor() {
     }
 
     processor.step = function(arg) {
-        if (!arguments.length || arg === undefined || arg == null || arg < 0)
+        if (!arguments.length || arg == null || arg < 0)
             return step;
         processor.setting.step = step = arg;
 

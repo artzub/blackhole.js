@@ -393,7 +393,7 @@ Most of the methods returning `blackHole` object in order to use chain.
     | __[getSelectedColor](#on-get-selected-color)__<a name="on-get-selected-color" /> | `function(`__nodeItem__`)` |  |
     | __[getVisibleByStep](#on-get-visible-by-step)__<a name="on-get-visible-by-step" /> | `function(`__nodeItem__`)` |  |
     | __[getCreateNearParent](#on-get-create-near-parent)__<a name="on-get-create-near-parent" /> | `function(`__sourceItem, nodeItem__`)` |  |
-    | __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> | `function(`__sourceItem`)` |  |
+    | __[getCategoryKey](#on-get-category-key)__<a name="on-get-category-key" /> | `function(`__sourceItem__`)` |  |
     | __[getCategoryName](#on-get-category-name)__<a name="on-get-category-name" /> | `function(`__sourceItem__`)` |  |
     | __[getChildKey](#on-get-child-key)__<a name="on-get-child-key" /> | `function(`__sourceItem__`)` |  |
     | __[getParent](#on-get-parent)__<a name="on-get-parent" /> | `function(`__sourceItem__`)` |  |

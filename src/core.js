@@ -519,7 +519,7 @@ blackhole = function (node) {
                 (render.onGetNodeRadius()(node) +
                     bh.setting.padding);
 
-            if (typeof d.lr !== "undefined" && d.lr - l < alpha * 10) {
+            if (d.lr != null && d.lr - l < alpha * 10) {
                 if (!d.atTarget) {
                     d.atTarget = true;
                     doParticleAtTarget(d, node);
@@ -796,9 +796,18 @@ blackhole = function (node) {
      * Append data
      * @param {Array} data
      */
-    bh.append = function(data) {
+    bh.append = function(data, removeOld, force) {
         if (!(data instanceof Array) || !nodes)
             return false;
+
+        if (removeOld) {
+            var l = nodes.length, a;
+            while (l--) {
+                a = nodes[l];
+                if (a.type == typeNode.child && (force || !a.opacity && !a.fixed))
+                    nodes.splice(l, 1);
+            }
+        }
 
         incData = incData.concat(data);
         nodes = nodes.concat(parser.nodes(data));
@@ -901,7 +910,7 @@ blackhole = function (node) {
 
         lastEvent = {
             translate: bh.setting.translate instanceof Array ? bh.setting.translate : [0, 0],
-            scale : typeof bh.setting.scale !== "undefined" ? bh.setting.scale : 1
+            scale : bh.setting.scale != null ? bh.setting.scale : 1
         };
 
         w = bh.size()[0];
