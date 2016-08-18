@@ -16,7 +16,7 @@ Suitable for the visualization of such data as:
 * Network attacks ([NetMonitor](http://artzub.com/img/demo_netMon.gif)) 
 * And etc.
 
-Depends of [D3js](http://d3js.org)
+Depends on [D3js](http://d3js.org)
 
 ## Structure
 
