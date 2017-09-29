@@ -310,12 +310,16 @@ blackhole = function (node) {
         return d.nodeValue.name;
     });
 
-    ['finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode', 'particleattarget'].forEach(function(key) {
+    ['getChildCharge', 'finished', 'starting', 'started', 'mouseovernode', 'mousemove', 'mouseoutnode', 'particleattarget'].forEach(function(key) {
         hashOnAction[key] = func(hashOnAction, key);
     });
 
     function doFunc(key) {
         return getFun(hashOnAction, key);
+    }
+
+    function doGetChildCharge(d) {
+        return doFunc('getChildCharge')(d);
     }
 
     function doStating() {
@@ -503,31 +507,32 @@ blackhole = function (node) {
                 return;
 
             var node = d.parent
-                , l
-                , r
-                , x
-                , y
+                , l, r
+                , x, y
+                , dl, pr
                 ;
 
-            if (node == d) return;
+            if (node === d) return;
             node.links++;
+
+            render.calcDrawCoords(d);
+            dl = dist(d.drawX - node.x, d.drawY - node.y);
 
             x = d.x - node.x;
             y = d.y - node.y;
             l = Math.sqrt(x * x + y * y);
-            r = render.onGetNodeRadius()(d) / 2 +
-                (render.onGetNodeRadius()(node) +
-                    bh.setting.padding);
+            pr = (render.onGetNodeRadius()(node) + bh.setting.padding);
+            r = render.onGetNodeRadius()(d) / 2 + pr;
 
-            if (d.lr != null && d.lr - l < alpha * 10) {
+            if (typeof d.lr !== "undefined" && d.lr - l < alpha * 10) {
                 if (!d.atTarget) {
                     d.atTarget = true;
                     doParticleAtTarget(d, node);
                 }
             }
-            d.lr = l;
-
-            if (l != r) {
+            d.lr = dl;
+            l = dl;
+            if (l !== r) {
                 l = (l - r) / (l || 1) * (alpha || 1);
                 x *= l;
                 y *= l;
@@ -537,8 +542,8 @@ blackhole = function (node) {
             }
 
             d.paths && d.flash && d.paths.push({
-                x : d.x,
-                y : d.y
+                x: d.drawX,
+                y: d.drawY
             });
         };
     }
@@ -564,8 +569,8 @@ blackhole = function (node) {
 
     function filterVisible(d) {
         var vis = checkVisible(d) && (d.visible || d.alive);
-        !vis && d.type == typeNode.child && (d.paths = []);
-        return vis && (d.type != typeNode.child || !frozenCategory || frozenCategory == d.category);
+        !vis && d.type === typeNode.child && (d.paths = []);
+        return vis && (d.type !== typeNode.child || !frozenCategory || frozenCategory === d.category);
     }
 
     function filterChild(d) {
@@ -625,8 +630,8 @@ blackhole = function (node) {
 
             if (n.fixed && n !== selected) {
                 if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
-                    n.x = +p.x;
-                    n.y = +p.y;
+                    n.x = +p.x + 30 * Math.cos(Math.random() * Math.PI * 2);
+                    n.y = +p.y + 30 * Math.sin(Math.random() * Math.PI * 2);
                 }
                 else {
                     n.x = d.x || xW(n.x);
@@ -646,6 +651,11 @@ blackhole = function (node) {
 
             bh.setting.increaseChild && (n.size += 1);
             n.fixed = false;//n === selected; //TODO bug when zooming. particle become frozen
+
+            n.from = n.parent && n.parent !== p ? n.parent : (n.from || {
+                x : n.x,
+                y : n.y
+            });
 
             n.parent = p;
             delete n.atTarget;
@@ -792,28 +802,36 @@ blackhole = function (node) {
         delete a.lr;
     }
 
+    bh.data = function () {
+        return incData;
+    };
+
     /**
      * Append data
      * @param {Array} data
+     * @param removeOld
+     * @param force
      */
     bh.append = function(data, removeOld, force) {
         if (!(data instanceof Array) || !nodes)
             return false;
-
         if (removeOld) {
-            var l = nodes.length, a;
+            var l = nodes.length, a, ia;
             while (l--) {
                 a = nodes[l];
-                if (a.type == typeNode.child && (force || !a.opacity && !a.fixed))
+                if (a.type === typeNode.child && (force || !a.opacity && !a.fixed)) {
+                    ia = incData.indexOf(a.nodeValue);
                     nodes.splice(l, 1);
+                    ~(ia) && incData.splice(ia, 1);
+                }
             }
         }
 
-        incData = incData.concat(data);
-        nodes = nodes.concat(parser.nodes(data));
+        incData.push.apply(incData, data);
+        nodes.push.apply(nodes, parser.nodes(data));
 
         processor.IsRun()
-            && processor.pause();
+        && processor.pause();
 
         var bound = d3.extent(data.map(parser.setting.getGroupBy()));
         processor.boundRange = [processor.boundRange[0] > processor.boundRange[1]
@@ -821,7 +839,7 @@ blackhole = function (node) {
             : processor.boundRange[0], bound[1]];
 
         processor.IsRun()
-            && processor.resume();
+        && processor.resume();
         return true;
     };
 
@@ -861,6 +879,11 @@ blackhole = function (node) {
 
             layer = parentNode.selectAll ? parentNode : d3.select(parentNode);
 
+            if (!(inData || []).length) {
+                layer.selectAll("*").remove();
+                return;
+            }
+
             var w = width || layer.node().clientWidth;
             var h = height || layer.node().clientHeight;
 
@@ -873,9 +896,10 @@ blackhole = function (node) {
             forceParent && forceParent.nodes([]).stop();
 
             if (!incData || !nodes || reInitData) {
-                nodes && nodes.splice(0);
+                nodes && (nodes.length = 0);
 
                 var sort = bh.sort();
+                incData && (incData.length = 0);
                 incData = isFun(sort) ? inData.sort(sort) : inData;
 
                 parser.init();
@@ -933,7 +957,7 @@ blackhole = function (node) {
         ctx = null;
 
         canvas = layer.append("canvas")
-            .text("This browser don't support element type of Canvas.")
+            .text("This browser doesn't support element type of Canvas.")
             .attr("width", w)
             .attr("height", h)
             .attr("id", "canvas_bh_" + idLayer)
@@ -959,7 +983,10 @@ blackhole = function (node) {
             .size([w, h])
             .friction(.75)
             .gravity(0)
-            .charge(function(d) {return -render.onGetNodeRadius()(d); })
+            .charge(function(d) {
+                return -render.onGetNodeRadius()(d)
+                // -doGetChildCharge(d);
+            })
             .on("tick", tick))
             .nodes([])
         ;

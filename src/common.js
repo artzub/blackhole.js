@@ -38,6 +38,16 @@ function isFun(a) {
 }
 
 /**
+ * distance between a and b
+ * @param a
+ * @param b
+ * @return {number}
+ */
+function dist(a, b) {
+    return Math.sqrt(Math.pow(a,2) + Math.pow(b, 2));
+}
+
+/**
  * Asynchronous forEach
  * @param {Array} items
  * @param {Function} fn

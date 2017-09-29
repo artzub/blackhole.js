@@ -40,7 +40,8 @@ function Render() {
 
             padding: 0,
             lengthTrack: 2,
-            compositeOperation: null
+            compositeOperation: null,
+            drawCrookedPath: false
         }
     };
 
@@ -122,6 +123,30 @@ function Render() {
         return d3.ascending(b.opacity, a.opacity);
     }
 
+    render.calcDrawCoords = function(d) {
+        d.drawX = d.x;
+        d.drawY = d.y;
+        if (!render.setting.drawCrookedPath)
+            return;
+
+        var to = (d.parent || d);
+
+        var r = dist(+d.from.x - to.x, +d.from.y - to.y)/2
+            , dx = to.x - d.x
+            , dy = to.y - d.y
+            , sx = dx < 0 ? 1 : -1
+            , sy = dy > 0 ? 1 : -1
+        ;
+
+        dx = Math.abs(dx) - r;
+        dy = Math.abs(dy) - r;
+
+        var k = .5;
+
+        d.drawX = d.x;// - sx * k * Math.sqrt(r*r - dy*dy);
+        d.drawY = d.y - (r ? k * Math.sqrt(r*r - dx*dx) : 0);
+    };
+
     /**
      * Draw tracks of particles
      * @param nodes
@@ -158,10 +183,20 @@ function Render() {
 
             trackCtx.fillStyle = "none";
             if (test)
-                trackCtx.lineWidth = .5;            while (--l > -1) {
+                trackCtx.lineWidth = .5;
+
+            while (--l > -1) {
                 d = nodes[l];
 
+                render.calcDrawCoords(d);
+
                 curColor = getSelectedColor(d);
+
+                if (curColor + "" === "none") {
+                    d.paths && d.paths.splice(0);
+                    continue
+                }
+
                 if (!c || compereColor(c, curColor)) {
                     c = curColor;
                     trackCtx.strokeStyle = c.toString();
@@ -205,7 +240,7 @@ function Render() {
                             trackCtx.beginPath();
                             trackCtx.moveTo(Math.floor(p.x), Math.floor(p.y));
 
-                            p = rs.length ? rs[rs.length - 1] : d;
+                            p = rs.length ? rs[rs.length - 1] : {x: d.drawX, y: d.drawY};
 
                             trackCtx.lineTo(
                                 Math.floor(p.x),
@@ -218,8 +253,8 @@ function Render() {
                 }
 
                 d.alive && d.parent && (d.flash || d.paths.length > 1) && d.paths.push({
-                    x: d.x,
-                    y: d.y
+                    x: d.drawX,
+                    y: d.drawY
                 });
 
                 !d.alive && d.paths.splice(0);
@@ -390,6 +425,10 @@ function Render() {
                 }
 
                 selectedColor = getSelectedColor(d);
+
+                if (selectedColor + '' === "none")
+                    continue;
+
                 if (!c || compereColor(c, selectedColor)) {
                     c = selectedColor;
 
@@ -408,9 +447,10 @@ function Render() {
                             bufCtx.strokeStyle = c.toString();
                             img = currentCache.get(bufCtx.strokeStyle);
                             if (!img) {
+                                c.a = c.hasOwnProperty("a") ? (c.a || 0) : 1;
                                 img = render.setting.drawAsPlasma
-                                    ? generateNeonBall(64, 64, c.r, c.g, c.b, 1)
-                                    : colorize(particleImg, c.r, c.g, c.b, 1)
+                                    ? generateNeonBall(64, 64, c.r, c.g, c.b, c.a)
+                                    : colorize(particleImg, c.r, c.g, c.b, c.a)
                                 ;
                                 currentCache.set(bufCtx.strokeStyle, img);
                             }
@@ -418,8 +458,8 @@ function Render() {
                     }
                 }
 
-                x = Math.floor(d.x);
-                y = Math.floor(d.y);
+                x = Math.floor(d.drawX);
+                y = Math.floor(d.drawY);
                 s = getNodeRadius(d) * (render.setting.drawHalo ? (render.setting.drawAsPlasma ? 8 : 10) : .8);
 
                 if (render.setting.drawChild) {

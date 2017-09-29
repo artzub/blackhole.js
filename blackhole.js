@@ -11,7 +11,7 @@
 
 !function() {
     var blackhole = {
-        version: "1.0.0.1"
+        version: "1.1.2"
     };
     (function() {
         var lastTime = 0;
@@ -35,6 +35,9 @@
     })();
     function isFun(a) {
         return typeof a === "function";
+    }
+    function dist(a, b) {
+        return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
     }
     function asyncForEach(items, fn, time, callback) {
         if (!(items instanceof Array)) return;
@@ -233,7 +236,7 @@
             var parent, key, n;
             if (!d || !(parent = parser.setting.getParent()(d))) return null;
             key = parser.setting.getParentKey()(parent);
-            if (typeof key === "undefined" || key == null) key = "undefined";
+            if (key == null) key = "undefined";
             n = parser.parentHash.get(key);
             if (!n) {
                 n = Node(parent, typeNode.parent);
@@ -245,7 +248,7 @@
             var key, n;
             if (!d) return null;
             key = parser.setting.getChildKey()(d);
-            if (typeof key === "undefined" || key == null) key = "undefined";
+            if (key == null) key = "undefined";
             n = parser.childHash.get(key);
             if (!n) {
                 n = Node(d, typeNode.child);
@@ -415,7 +418,7 @@
             }
         }
         processor.step = function(arg) {
-            if (!arguments.length || arg === undefined || arg == null || arg < 0) return step;
+            if (!arguments.length || arg == null || arg < 0) return step;
             processor.setting.step = step = arg;
             if (processor.IsRun()) {
                 killWorker();
@@ -481,7 +484,8 @@
                 hasLabelMaxWidth: false,
                 padding: 0,
                 lengthTrack: 2,
-                compositeOperation: null
+                compositeOperation: null,
+                drawCrookedPath: false
             }
         };
         var regEvent = new RegExp("^on");
@@ -532,6 +536,18 @@
         function sortByOpacity(a, b) {
             return d3.ascending(b.opacity, a.opacity);
         }
+        render.calcDrawCoords = function(d) {
+            d.drawX = d.x;
+            d.drawY = d.y;
+            if (!render.setting.drawCrookedPath) return;
+            var to = d.parent || d;
+            var r = dist(+d.from.x - to.x, +d.from.y - to.y) / 2, dx = to.x - d.x, dy = to.y - d.y, sx = dx < 0 ? 1 : -1, sy = dy > 0 ? 1 : -1;
+            dx = Math.abs(dx) - r;
+            dy = Math.abs(dy) - r;
+            var k = .5;
+            d.drawX = d.x;
+            d.drawY = d.y - (r ? k * Math.sqrt(r * r - dx * dx) : 0);
+        };
         function drawTrack(nodes, lastEvent) {
             if (!trackCtx) {
                 trackCanvas = document.createElement("canvas");
@@ -555,7 +571,12 @@
                 if (test) trackCtx.lineWidth = .5;
                 while (--l > -1) {
                     d = nodes[l];
+                    render.calcDrawCoords(d);
                     curColor = getSelectedColor(d);
+                    if (curColor + "" === "none") {
+                        d.paths && d.paths.splice(0);
+                        continue;
+                    }
                     if (!c || compereColor(c, curColor)) {
                         c = curColor;
                         trackCtx.strokeStyle = c.toString();
@@ -579,7 +600,10 @@
                             while (p = rs.pop()) {
                                 trackCtx.beginPath();
                                 trackCtx.moveTo(Math.floor(p.x), Math.floor(p.y));
-                                p = rs.length ? rs[rs.length - 1] : d;
+                                p = rs.length ? rs[rs.length - 1] : {
+                                    x: d.drawX,
+                                    y: d.drawY
+                                };
                                 trackCtx.lineTo(Math.floor(p.x), Math.floor(p.y));
                                 trackCtx.globalAlpha = (lrs - rs.length + 1) / lrs;
                                 trackCtx.stroke();
@@ -587,8 +611,8 @@
                         }
                     }
                     d.alive && d.parent && (d.flash || d.paths.length > 1) && d.paths.push({
-                        x: d.x,
-                        y: d.y
+                        x: d.drawX,
+                        y: d.drawY
                     });
                     !d.alive && d.paths.splice(0);
                 }
@@ -673,6 +697,7 @@
                         bufCtx.globalAlpha = i * .01;
                     }
                     selectedColor = getSelectedColor(d);
+                    if (selectedColor + "" === "none") continue;
                     if (!c || compereColor(c, selectedColor)) {
                         c = selectedColor;
                         if (render.setting.drawChild) {
@@ -688,14 +713,15 @@
                                 bufCtx.strokeStyle = c.toString();
                                 img = currentCache.get(bufCtx.strokeStyle);
                                 if (!img) {
-                                    img = render.setting.drawAsPlasma ? generateNeonBall(64, 64, c.r, c.g, c.b, 1) : colorize(particleImg, c.r, c.g, c.b, 1);
+                                    c.a = c.hasOwnProperty("a") ? c.a || 0 : 1;
+                                    img = render.setting.drawAsPlasma ? generateNeonBall(64, 64, c.r, c.g, c.b, c.a) : colorize(particleImg, c.r, c.g, c.b, c.a);
                                     currentCache.set(bufCtx.strokeStyle, img);
                                 }
                             }
                         }
                     }
-                    x = Math.floor(d.x);
-                    y = Math.floor(d.y);
+                    x = Math.floor(d.drawX);
+                    y = Math.floor(d.drawY);
                     s = getNodeRadius(d) * (render.setting.drawHalo ? render.setting.drawAsPlasma ? 8 : 10 : .8);
                     if (render.setting.drawChild) {
                         if (!render.setting.drawHalo) {
@@ -1040,11 +1066,14 @@
         bh.on("getParentLabel", function(d) {
             return d.nodeValue.name;
         });
-        [ "finished", "starting", "started", "mouseovernode", "mousemove", "mouseoutnode", "particleattarget" ].forEach(function(key) {
+        [ "getChildCharge", "finished", "starting", "started", "mouseovernode", "mousemove", "mouseoutnode", "particleattarget" ].forEach(function(key) {
             hashOnAction[key] = func(hashOnAction, key);
         });
         function doFunc(key) {
             return getFun(hashOnAction, key);
+        }
+        function doGetChildCharge(d) {
+            return doFunc("getChildCharge")(d);
         }
         function doStating() {
             return doFunc("starting")();
@@ -1157,21 +1186,25 @@
                 if (restart) return;
                 blink(d, bh.setting.childLife > 0);
                 if (!d.parent || !d.visible) return;
-                var node = d.parent, l, r, x, y;
-                if (node == d) return;
+                var node = d.parent, l, r, x, y, dl, pr;
+                if (node === d) return;
                 node.links++;
+                render.calcDrawCoords(d);
+                dl = dist(d.drawX - node.x, d.drawY - node.y);
                 x = d.x - node.x;
                 y = d.y - node.y;
                 l = Math.sqrt(x * x + y * y);
-                r = render.onGetNodeRadius()(d) / 2 + (render.onGetNodeRadius()(node) + bh.setting.padding);
+                pr = render.onGetNodeRadius()(node) + bh.setting.padding;
+                r = render.onGetNodeRadius()(d) / 2 + pr;
                 if (typeof d.lr !== "undefined" && d.lr - l < alpha * 10) {
                     if (!d.atTarget) {
                         d.atTarget = true;
                         doParticleAtTarget(d, node);
                     }
                 }
-                d.lr = l;
-                if (l != r) {
+                d.lr = dl;
+                l = dl;
+                if (l !== r) {
                     l = (l - r) / (l || 1) * (alpha || 1);
                     x *= l;
                     y *= l;
@@ -1179,8 +1212,8 @@
                     d.y -= y;
                 }
                 d.paths && d.flash && d.paths.push({
-                    x: d.x,
-                    y: d.y
+                    x: d.drawX,
+                    y: d.drawY
                 });
             };
         }
@@ -1193,8 +1226,8 @@
         }
         function filterVisible(d) {
             var vis = checkVisible(d) && (d.visible || d.alive);
-            !vis && d.type == typeNode.child && (d.paths = []);
-            return vis && (d.type != typeNode.child || !frozenCategory || frozenCategory == d.category);
+            !vis && d.type === typeNode.child && (d.paths = []);
+            return vis && (d.type !== typeNode.child || !frozenCategory || frozenCategory === d.category);
         }
         function filterChild(d) {
             !d.visible && (d.paths = []);
@@ -1242,8 +1275,8 @@
                 n = d.nodes[l];
                 if (n.fixed && n !== selected) {
                     if (bh.setting.createNearParent && attachGetCreateNearParent()(d, n)) {
-                        n.x = +p.x;
-                        n.y = +p.y;
+                        n.x = +p.x + 30 * Math.cos(Math.random() * Math.PI * 2);
+                        n.y = +p.y + 30 * Math.sin(Math.random() * Math.PI * 2);
                     } else {
                         n.x = d.x || xW(n.x);
                         n.y = d.y || yH(n.y);
@@ -1259,6 +1292,10 @@
                 }
                 bh.setting.increaseChild && (n.size += 1);
                 n.fixed = false;
+                n.from = n.parent && n.parent !== p ? n.parent : n.from || {
+                    x: n.x,
+                    y: n.y
+                };
                 n.parent = p;
                 delete n.atTarget;
                 delete n.lr;
@@ -1353,10 +1390,24 @@
             delete a.atTarget;
             delete a.lr;
         }
-        bh.append = function(data) {
+        bh.data = function() {
+            return incData;
+        };
+        bh.append = function(data, removeOld, force) {
             if (!(data instanceof Array) || !nodes) return false;
-            incData = incData.concat(data);
-            nodes = nodes.concat(parser.nodes(data));
+            if (removeOld) {
+                var l = nodes.length, a, ia;
+                while (l--) {
+                    a = nodes[l];
+                    if (a.type === typeNode.child && (force || !a.opacity && !a.fixed)) {
+                        ia = incData.indexOf(a.nodeValue);
+                        nodes.splice(l, 1);
+                        ~ia && incData.splice(ia, 1);
+                    }
+                }
+            }
+            incData.push.apply(incData, data);
+            nodes.push.apply(nodes, parser.nodes(data));
             processor.IsRun() && processor.pause();
             var bound = d3.extent(data.map(parser.setting.getGroupBy()));
             processor.boundRange = [ processor.boundRange[0] > processor.boundRange[1] ? processor.boundRange[1] + 1 : processor.boundRange[0], bound[1] ];
@@ -1380,6 +1431,10 @@
                 }
                 if (!(inData || []).length) return;
                 layer = parentNode.selectAll ? parentNode : d3.select(parentNode);
+                if (!(inData || []).length) {
+                    layer.selectAll("*").remove();
+                    return;
+                }
                 var w = width || layer.node().clientWidth;
                 var h = height || layer.node().clientHeight;
                 bh.size([ w, h ]);
@@ -1387,8 +1442,9 @@
                 forceChild && forceChild.nodes([]).stop();
                 forceParent && forceParent.nodes([]).stop();
                 if (!incData || !nodes || reInitData) {
-                    nodes && nodes.splice(0);
+                    nodes && (nodes.length = 0);
                     var sort = bh.sort();
+                    incData && (incData.length = 0);
                     incData = isFun(sort) ? inData.sort(sort) : inData;
                     parser.init();
                     if (!bh.setting.asyncParsing) {
@@ -1412,7 +1468,7 @@
             layer.selectAll("*").remove();
             lastEvent = {
                 translate: bh.setting.translate instanceof Array ? bh.setting.translate : [ 0, 0 ],
-                scale: typeof bh.setting.scale !== "undefined" ? bh.setting.scale : 1
+                scale: bh.setting.scale != null ? bh.setting.scale : 1
             };
             w = bh.size()[0];
             h = bh.size()[1];
@@ -1420,7 +1476,7 @@
             yH = yH || d3.scale.linear().range([ 0, h ]).domain([ 0, h ]);
             zoom = bh.setting.zoom || d3.behavior.zoom().scaleExtent(bh.setting.scaleExtent instanceof Array ? bh.setting.scaleExtent : [ .1, 8 ]).scale(lastEvent.scale).translate(lastEvent.translate).on("zoom", zooming);
             ctx = null;
-            canvas = layer.append("canvas").text("This browser don't support element type of Canvas.").attr("width", w).attr("height", h).attr("id", "canvas_bh_" + idLayer).call(zoom).on("mousemove.tooltip", moveMouse).node();
+            canvas = layer.append("canvas").text("This browser doesn't support element type of Canvas.").attr("width", w).attr("height", h).attr("id", "canvas_bh_" + idLayer).call(zoom).on("mousemove.tooltip", moveMouse).node();
             bh.style({
                 position: "absolute",
                 top: 0,
